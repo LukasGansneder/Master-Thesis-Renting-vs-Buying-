@@ -1,35 +1,27 @@
 import { MapContainer, TileLayer, Popup, SVGOverlay, useMap } from 'react-leaflet';
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import BuildInfo from './BuildInfo';
+import Header from './Header';
+import Footer from './Footer';
 
-// Custom component to fit map to show all regions
-const FitBoundsControl = ({ bounds }) => {
+// Component to handle fit bounds inside MapContainer
+const MapController = ({ bounds, onFitBoundsRef }) => {
   const map = useMap();
 
-  const fitToBounds = () => {
-    if (bounds) {
-      map.fitBounds(bounds, { padding: [50, 50] });
+  useEffect(() => {
+    if (onFitBoundsRef) {
+      const handler = () => {
+        if (bounds) {
+          map.fitBounds(bounds, { padding: [50, 50] });
+        }
+      };
+      onFitBoundsRef.current = handler;
     }
-  };
+  }, [map, bounds, onFitBoundsRef]);
 
-  return (
-    <div className="leaflet-top leaflet-right" style={{ marginTop: '80px', marginRight: '10px' }}>
-      <div className="leaflet-control leaflet-bar">
-        <button
-          onClick={fitToBounds}
-          className="bg-white hover:bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 border-0 cursor-pointer"
-          style={{ width: 'auto', height: 'auto', lineHeight: 'normal' }}
-          title="Fit all regions in view"
-        >
-          Fit All
-        </button>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 // Custom component to render SVG regions as Leaflet layers
@@ -176,7 +168,6 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
 };
 
 const GermanyHeatmap = () => {
-  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [selectedYear, setSelectedYear] = useState(2023);
   const [loading, setLoading] = useState(true);
@@ -184,6 +175,7 @@ const GermanyHeatmap = () => {
   const [svgData, setSvgData] = useState(null);
   const [showBasemap, setShowBasemap] = useState(false);
   const [colorScheme, setColorScheme] = useState('blue-white-red');
+  const fitBoundsRef = useRef(null);
 
   // Define color schemes
   const colorSchemes = {
@@ -425,203 +417,174 @@ const GermanyHeatmap = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-xl text-gray-600">Loading data...</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
+        <Header title="Germany Heatmap" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-xl text-gray-600">Loading data...</div>
+        </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-md p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Germany Heatmap
-          </h1>
-          <button
-            onClick={() => navigate('/')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            ← Back to Home
-          </button>
-        </div>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-gray-600">
-            Visualization of NPV scores across German regions (higher score = buying is more favorable)
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
+      <Header title="Germany Heatmap" />
 
-          <div className="flex items-center gap-6">
-            {/* Color scheme selector */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="color-scheme" className="text-sm font-medium text-gray-700">
-                Color Scheme:
-              </label>
-              <select
-                id="color-scheme"
-                value={colorScheme}
-                onChange={(e) => setColorScheme(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <optgroup label="2-Color Schemes">
-                  <option value="blue-red">Blue-Red</option>
-                  <option value="purple-orange">Purple-Orange</option>
-                  <option value="red-green">Red-Green</option>
-                  <option value="teal-coral">Teal-Coral</option>
-                  <option value="indigo-gold">Indigo-Gold</option>
-                  <option value="cyan-magenta">Cyan-Magenta</option>
-                  <option value="navy-amber">Navy-Amber</option>
-                </optgroup>
-                <optgroup label="3-Color Schemes">
-                  <option value="blue-white-red">Blue-White-Red</option>
-                  <option value="purple-gray-orange">Purple-Gray-Orange</option>
-                  <option value="red-yellow-green">Red-Yellow-Green</option>
-                  <option value="blue-beige-brown">Blue-Beige-Brown</option>
-                  <option value="pink-white-teal">Pink-White-Teal</option>
-                  <option value="teal-ivory-coral">Teal-Ivory-Coral</option>
-                  <option value="indigo-lavender-gold">Indigo-Lavender-Gold</option>
-                  <option value="navy-silver-amber">Navy-Silver-Amber</option>
-                  <option value="turquoise-pearl-salmon">Turquoise-Pearl-Salmon</option>
-                  <option value="forest-cream-rust">Forest-Cream-Rust</option>
-                </optgroup>
-              </select>
-            </div>
-
-            {/* Basemap toggle */}
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showBasemap}
-                onChange={(e) => setShowBasemap(e.target.checked)}
-                className="w-4 h-4"
-              />
-              <span className="text-sm text-gray-700">Show Basemap</span>
-            </label>
-
-            {/* Color legend */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Score:</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium" style={{ color: scheme.range[0] }}>
-                  -1 (Rent)
-                </span>
-                <div
-                  className="w-32 h-4 rounded"
-                  style={{
-                    background: `linear-gradient(to right, ${scheme.range.join(', ')})`
-                  }}
-                ></div>
-                <span className="text-xs font-medium" style={{ color: scheme.range[scheme.range.length - 1] }}>
-                  +1 (Buy)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Horizontal Year Slider */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">Year:</span>
-          <div className="flex-1 flex items-center gap-4">
-            <span className="text-sm text-gray-600">{Math.min(...years)}</span>
-            <input
-              type="range"
-              min={Math.min(...years)}
-              max={Math.max(...years)}
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(+e.target.value)}
-              step="1"
-              list="year-marks"
-              className="flex-1"
-              style={{
-                height: '8px'
-              }}
+      {/* Map Container */}
+      <div className="flex-1 relative">
+        <MapContainer
+          center={[51.1657, 10.4515]}
+          zoom={7}
+          className="h-full w-full"
+          style={{ background: '#ffffff' }}
+          zoomAnimation={true}
+          fadeAnimation={true}
+          markerZoomAnimation={true}
+          zoomAnimationThreshold={4}
+        >
+          {showBasemap && (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <span className="text-sm text-gray-600">{Math.max(...years)}</span>
-            <datalist id="year-marks">
-              {years.map(year => (
-                <option key={year} value={year} />
-              ))}
-            </datalist>
-          </div>
-          <div className="text-lg font-bold text-gray-800 min-w-[60px] text-center">
-            {selectedYear}
-          </div>
-        </div>
-      </div>
+          )}
 
-      {/* Map and Stats Container */}
-      <div className="flex-1 flex relative">
-        {/* Map */}
-        <div className="flex-1 relative">
-          <MapContainer
-            center={[51.1657, 10.4515]}
-            zoom={7}
-            className="h-full w-full"
-            style={{ background: '#ffffff' }}
-            zoomAnimation={true}
-            fadeAnimation={true}
-            markerZoomAnimation={true}
-            zoomAnimationThreshold={4}
-          >
-            {showBasemap && (
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          {svgData && (
+            <>
+              <SVGRegions 
+                svgData={svgData} 
+                yearData={yearData} 
+                colorScale={colorScale}
               />
+              <MapController bounds={mapBounds} onFitBoundsRef={fitBoundsRef} />
+            </>
+          )}
+        </MapContainer>
+
+        {/* Floating Control Panel - Bottom Left */}
+        <div className="absolute bottom-6 left-6 z-[1000] bg-white rounded-lg shadow-xl p-4 space-y-4 max-w-md">
+          {/* Year Slider */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">Year</span>
+              <span className="text-lg font-bold text-gray-800">{selectedYear}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500">{Math.min(...years)}</span>
+              <input
+                type="range"
+                min={Math.min(...years)}
+                max={Math.max(...years)}
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(+e.target.value)}
+                step="1"
+                className="flex-1 h-2"
+              />
+              <span className="text-xs text-gray-500">{Math.max(...years)}</span>
+            </div>
+          </div>
+
+          {/* Color Scheme Picker */}
+          <div className="space-y-2">
+            <label htmlFor="color-scheme" className="text-sm font-medium text-gray-700 block">
+              Color Scheme
+            </label>
+            <select
+              id="color-scheme"
+              value={colorScheme}
+              onChange={(e) => setColorScheme(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <optgroup label="2-Color Schemes">
+                <option value="blue-red">Blue-Red</option>
+                <option value="purple-orange">Purple-Orange</option>
+                <option value="red-green">Red-Green</option>
+                <option value="teal-coral">Teal-Coral</option>
+                <option value="indigo-gold">Indigo-Gold</option>
+                <option value="cyan-magenta">Cyan-Magenta</option>
+                <option value="navy-amber">Navy-Amber</option>
+              </optgroup>
+              <optgroup label="3-Color Schemes">
+                <option value="blue-white-red">Blue-White-Red</option>
+                <option value="purple-gray-orange">Purple-Gray-Orange</option>
+                <option value="red-yellow-green">Red-Yellow-Green</option>
+                <option value="blue-beige-brown">Blue-Beige-Brown</option>
+                <option value="pink-white-teal">Pink-White-Teal</option>
+                <option value="teal-ivory-coral">Teal-Ivory-Coral</option>
+                <option value="indigo-lavender-gold">Indigo-Lavender-Gold</option>
+                <option value="navy-silver-amber">Navy-Silver-Amber</option>
+                <option value="turquoise-pearl-salmon">Turquoise-Pearl-Salmon</option>
+                <option value="forest-cream-rust">Forest-Cream-Rust</option>
+              </optgroup>
+            </select>
+          </div>
+
+          {/* Color Legend */}
+          <div className="space-y-2">
+            <span className="text-sm font-medium text-gray-700 block">Score Legend</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium" style={{ color: scheme.range[0] }}>
+                -1 (Rent)
+              </span>
+              <div
+                className="flex-1 h-4 rounded"
+                style={{
+                  background: `linear-gradient(to right, ${scheme.range.join(', ')})`
+                }}
+              ></div>
+              <span className="text-xs font-medium" style={{ color: scheme.range[scheme.range.length - 1] }}>
+                +1 (Buy)
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+            {/* Basemap Toggle Icon */}
+            <button
+              onClick={() => setShowBasemap(!showBasemap)}
+              className={`p-2 rounded border ${showBasemap ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700'} hover:bg-gray-50 transition-colors`}
+              title="Toggle basemap"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+            </button>
+
+            {/* Fit All Button */}
+            {mapBounds && (
+              <button
+                onClick={() => fitBoundsRef.current && fitBoundsRef.current()}
+                className="bg-white hover:bg-gray-100 p-2 rounded shadow cursor-pointer border border-gray-300"
+                title="Fit all regions in view"
+              >
+                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </button>
             )}
 
-            {svgData && (
-              <>
-                <SVGRegions 
-                  svgData={svgData} 
-                  yearData={yearData} 
-                  colorScale={colorScale}
-                />
-                {mapBounds && <FitBoundsControl bounds={mapBounds} />}
-              </>
-            )}
-          </MapContainer>
-        </div>
-
-        {/* Stats Sidebar */}
-        <div className="w-64 bg-white border-l border-gray-200 p-6 flex flex-col justify-center">
-          <h2 className="text-lg font-bold text-gray-800 mb-6 text-center">Statistics</h2>
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-800">{yearData.length}</div>
-              <div className="text-sm text-gray-600 mt-1">Regions</div>
-            </div>
-            <div className="border-t border-gray-200 pt-6">
+            {/* Statistics Summary */}
+            <div className="flex-1 flex items-center justify-end gap-3 text-xs text-gray-600">
               <div className="text-center">
-                <div className="text-3xl font-bold text-red-600">
-                  {yearData.filter(d => d.score > 0.5).length}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">Favorable to Buy</div>
+                <div className="font-bold text-sm text-gray-800">{yearData.length}</div>
+                <div>Regions</div>
               </div>
-            </div>
-            <div className="border-t border-gray-200 pt-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">
-                  {yearData.filter(d => d.score < -0.5).length}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">Favorable to Rent</div>
+                <div className="font-bold text-sm text-red-600">{yearData.filter(d => d.score > 0.5).length}</div>
+                <div>Buy</div>
               </div>
-            </div>
-            <div className="border-t border-gray-200 pt-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-gray-600">
-                  {yearData.filter(d => d.score >= -0.5 && d.score <= 0.5).length}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">Neutral</div>
+                <div className="font-bold text-sm text-blue-600">{yearData.filter(d => d.score < -0.5).length}</div>
+                <div>Rent</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Build Info Bar */}
-      <BuildInfo />
+      <Footer />
     </div>
   );
 };

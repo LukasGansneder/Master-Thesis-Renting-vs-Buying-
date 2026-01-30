@@ -1,21 +1,16 @@
 import { useNavigate } from 'react-router-dom';
+import Header from './Header';
+import Footer from './Footer';
 
 const LandingPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Master Thesis: Renting vs. Buying
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Interactive visualizations for German real estate market analysis
-          </p>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
+      <Header 
+        title="Master Thesis: Renting vs. Buying"
+        subtitle="Interactive visualizations for German real estate market analysis"
+      />
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -115,14 +110,7 @@ const LandingPage = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-gray-500 text-sm">
-            Master Thesis Project - Renting vs. Buying Analysis
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
