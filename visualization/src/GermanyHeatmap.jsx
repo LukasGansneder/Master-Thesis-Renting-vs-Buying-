@@ -182,6 +182,30 @@ const GermanyHeatmap = () => {
       range: ['#e74c3c', '#27ae60'],
       labels: { low: 'Red (Rent)', high: 'Green (Buy)' }
     },
+    'teal-coral': {
+      name: 'Teal-Coral (2 colors)',
+      domain: [-1, 1],
+      range: ['#14b8a6', '#ff7f50'],
+      labels: { low: 'Teal (Rent)', high: 'Coral (Buy)' }
+    },
+    'indigo-gold': {
+      name: 'Indigo-Gold (2 colors)',
+      domain: [-1, 1],
+      range: ['#4f46e5', '#fbbf24'],
+      labels: { low: 'Indigo (Rent)', high: 'Gold (Buy)' }
+    },
+    'cyan-magenta': {
+      name: 'Cyan-Magenta (2 colors)',
+      domain: [-1, 1],
+      range: ['#06b6d4', '#ec4899'],
+      labels: { low: 'Cyan (Rent)', high: 'Magenta (Buy)' }
+    },
+    'navy-amber': {
+      name: 'Navy-Amber (2 colors)',
+      domain: [-1, 1],
+      range: ['#1e3a8a', '#f59e0b'],
+      labels: { low: 'Navy (Rent)', high: 'Amber (Buy)' }
+    },
     // 3-color schemes
     'blue-white-red': {
       name: 'Blue-White-Red (3 colors)',
@@ -212,6 +236,36 @@ const GermanyHeatmap = () => {
       domain: [-1, 0, 1],
       range: ['#ff69b4', '#ffffff', '#008080'],
       labels: { low: 'Pink (Rent)', mid: 'White (Neutral)', high: 'Teal (Buy)' }
+    },
+    'teal-ivory-coral': {
+      name: 'Teal-Ivory-Coral (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#14b8a6', '#fffff0', '#ff7f50'],
+      labels: { low: 'Teal (Rent)', mid: 'Ivory (Neutral)', high: 'Coral (Buy)' }
+    },
+    'indigo-lavender-gold': {
+      name: 'Indigo-Lavender-Gold (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#4f46e5', '#e9d5ff', '#fbbf24'],
+      labels: { low: 'Indigo (Rent)', mid: 'Lavender (Neutral)', high: 'Gold (Buy)' }
+    },
+    'navy-silver-amber': {
+      name: 'Navy-Silver-Amber (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#1e3a8a', '#d1d5db', '#f59e0b'],
+      labels: { low: 'Navy (Rent)', mid: 'Silver (Neutral)', high: 'Amber (Buy)' }
+    },
+    'turquoise-pearl-salmon': {
+      name: 'Turquoise-Pearl-Salmon (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#06b6d4', '#faf9f6', '#fa8072'],
+      labels: { low: 'Turquoise (Rent)', mid: 'Pearl (Neutral)', high: 'Salmon (Buy)' }
+    },
+    'forest-cream-rust': {
+      name: 'Forest-Cream-Rust (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#166534', '#fffbeb', '#b45309'],
+      labels: { low: 'Forest (Rent)', mid: 'Cream (Neutral)', high: 'Rust (Buy)' }
     }
   };
 
@@ -339,6 +393,10 @@ const GermanyHeatmap = () => {
                   <option value="blue-red">Blue-Red</option>
                   <option value="purple-orange">Purple-Orange</option>
                   <option value="red-green">Red-Green</option>
+                  <option value="teal-coral">Teal-Coral</option>
+                  <option value="indigo-gold">Indigo-Gold</option>
+                  <option value="cyan-magenta">Cyan-Magenta</option>
+                  <option value="navy-amber">Navy-Amber</option>
                 </optgroup>
                 <optgroup label="3-Color Schemes">
                   <option value="blue-white-red">Blue-White-Red</option>
@@ -346,6 +404,11 @@ const GermanyHeatmap = () => {
                   <option value="red-yellow-green">Red-Yellow-Green</option>
                   <option value="blue-beige-brown">Blue-Beige-Brown</option>
                   <option value="pink-white-teal">Pink-White-Teal</option>
+                  <option value="teal-ivory-coral">Teal-Ivory-Coral</option>
+                  <option value="indigo-lavender-gold">Indigo-Lavender-Gold</option>
+                  <option value="navy-silver-amber">Navy-Silver-Amber</option>
+                  <option value="turquoise-pearl-salmon">Turquoise-Pearl-Salmon</option>
+                  <option value="forest-cream-rust">Forest-Cream-Rust</option>
                 </optgroup>
               </select>
             </div>
