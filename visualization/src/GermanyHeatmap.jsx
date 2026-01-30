@@ -243,7 +243,7 @@ const GermanyHeatmap = () => {
     .domain([-1, 0, 1])
     .range(['#0000ff', '#ffffff', '#ff0000'])
     .interpolate(d3.interpolateRgb);
-  
+
   // Color for N/A values (if needed)
   const naColor = '#000000';
 
@@ -259,7 +259,7 @@ const GermanyHeatmap = () => {
     <div className="h-screen flex bg-gray-50">
       {/* Sidebar with year slider */}
       <div className="w-20 bg-white shadow-lg flex flex-col items-center py-6 gap-4">
-        <div className="text-sm font-medium text-gray-700 writing-mode-vertical transform -rotate-180" style={{writingMode: 'vertical-rl'}}>
+        <div className="text-sm font-medium text-gray-700 writing-mode-vertical transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
           Year
         </div>
         <div className="flex-1 flex items-center">
@@ -302,7 +302,7 @@ const GermanyHeatmap = () => {
             <p className="text-gray-600">
               Visualization of NPV scores across German regions (higher score = buying is more favorable)
             </p>
-            
+
             <div className="flex items-center gap-6">
               {/* Basemap toggle */}
               <label className="flex items-center gap-2 cursor-pointer">
@@ -334,7 +334,7 @@ const GermanyHeatmap = () => {
         <div className="flex-1 relative">
           <MapContainer
             center={[51.1657, 10.4515]}
-            zoom={6}
+            zoom={7}
             className="h-full w-full"
             style={{ background: '#ffffff' }}
           >
