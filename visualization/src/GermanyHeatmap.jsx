@@ -113,7 +113,7 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
       const coords = polygonCoords.length === 1 ? polygonCoords[0] : polygonCoords;
 
       const polygon = L.polygon(coords, {
-        fillColor: color,
+        fillColor: !scoreData.score ? "#444" : color,
         fillOpacity: 0.7,
         color: '#333',
         weight: 1,
