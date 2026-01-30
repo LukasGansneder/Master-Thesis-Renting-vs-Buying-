@@ -148,7 +148,8 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
           <div style="font-size: 12px; color: #666; margin-top: 4px;">
             ${scoreData.score > 0.5 ? '✓ Buying favorable' :
           scoreData.score < -0.5 ? '✓ Renting favorable' :
-            '≈ Neutral'}
+            scoreData.score === 0 ? 'N/A' :
+              '≈ Neutral'}
           </div>
         </div>
       `);
@@ -435,13 +436,16 @@ const GermanyHeatmap = () => {
       <div className="flex-1 relative">
         <MapContainer
           center={[51.1657, 10.4515]}
-          zoom={7}
+          zoom={6}
           className="h-full w-full"
           style={{ background: '#ffffff' }}
           zoomAnimation={true}
           fadeAnimation={true}
           markerZoomAnimation={true}
           zoomAnimationThreshold={4}
+          maxZoom={8}
+          minZoom={5.5}
+          maxBounds={mapBounds}
         >
           {showBasemap && (
             <TileLayer

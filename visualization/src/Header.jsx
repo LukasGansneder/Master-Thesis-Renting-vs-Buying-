@@ -3,20 +3,20 @@ import { Link } from 'react-router-dom';
 const Header = ({ title, subtitle }) => {
   const defaultSubtitle = "Interactive visualizations for German real estate market analysis";
   const baseTitle = "Master Thesis: Renting vs. Buying";
-  
+
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-white shadow-sm relative z-[1000]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center text-sm text-gray-600 mb-3" aria-label="Breadcrumb">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center hover:text-gray-900 transition-colors"
             aria-label="Home"
           >
-            <svg 
-              className="w-5 h-5" 
-              fill="currentColor" 
+            <svg
+              className="w-5 h-5"
+              fill="currentColor"
               viewBox="0 0 20 20"
               xmlns="http://www.w3.org/2000/svg"
             >
