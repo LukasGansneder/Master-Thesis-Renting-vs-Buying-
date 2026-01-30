@@ -276,8 +276,8 @@ const GermanyHeatmap = () => {
 
         // Load CSV files and SVG
         const [scoresText, svgText] = await Promise.all([
-          fetch('/data/export_empirica_regio.csv').then(r => r.text()),
-          fetch('/data/landkreise.svg').then(r => r.text())
+          fetch('./data/export_empirica_regio.csv').then(r => r.text()),
+          fetch('./data/landkreise.svg').then(r => r.text())
         ]);
 
         // Parse semicolon-separated CSV with comma decimals
@@ -431,8 +431,8 @@ const GermanyHeatmap = () => {
                 <span className="text-xs font-medium" style={{ color: scheme.range[0] }}>
                   -1 (Rent)
                 </span>
-                <div 
-                  className="w-32 h-4 rounded" 
+                <div
+                  className="w-32 h-4 rounded"
                   style={{
                     background: `linear-gradient(to right, ${scheme.range.join(', ')})`
                   }}
