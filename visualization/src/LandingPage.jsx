@@ -7,20 +7,17 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
-      <Header 
-        title="Master Thesis: Renting vs. Buying"
-        subtitle="Interactive visualizations for German real estate market analysis"
-      />
+      <Header />
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1">
         {/* Hero section */}
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Explore Housing Market Insights
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Visualize and analyze the rent vs. buy decision across different regions 
+            Visualize and analyze the rent vs. buy decision across different regions
             and time periods in Germany
           </p>
         </div>
@@ -28,7 +25,7 @@ const LandingPage = () => {
         {/* Visualizations Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {/* Germany Heatmap Card */}
-          <div 
+          <div
             onClick={() => navigate('/germany-heatmap')}
             className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer overflow-hidden group"
           >
@@ -42,7 +39,7 @@ const LandingPage = () => {
             </div>
             <div className="p-6">
               <p className="text-gray-600 mb-4">
-                Interactive map visualization showing rent vs. buy scores across German regions 
+                Interactive map visualization showing rent vs. buy scores across German regions
                 with time series data from multiple years.
               </p>
               <ul className="space-y-2 text-sm text-gray-500 mb-4">
@@ -99,12 +96,12 @@ const LandingPage = () => {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h3 className="text-2xl font-bold text-gray-900 mb-4">About This Project</h3>
           <p className="text-gray-600 mb-4">
-            This project provides interactive visualizations for analyzing the rent vs. buy decision 
-            across different regions in Germany. The data includes NPV (Net Present Value) scores 
+            This project provides interactive visualizations for analyzing the rent vs. buy decision
+            across different regions in Germany. The data includes NPV (Net Present Value) scores
             that help determine whether renting or buying is more favorable in each region.
           </p>
           <p className="text-gray-600">
-            The visualizations are based on comprehensive data analysis and provide insights into 
+            The visualizations are based on comprehensive data analysis and provide insights into
             regional housing market trends over time.
           </p>
         </div>
