@@ -417,7 +417,7 @@ const GermanyHeatmap = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
+      <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
         <Header title="Germany Heatmap" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-xl text-gray-600">Loading data...</div>
@@ -428,7 +428,7 @@ const GermanyHeatmap = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col">
       <Header title="Germany Heatmap" />
 
       {/* Map Container */}
