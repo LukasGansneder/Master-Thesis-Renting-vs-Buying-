@@ -48,17 +48,31 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
     // Function to parse SVG path and convert to lat/lng coordinates
     const parseSVGPath = (pathData) => {
       const coords = [];
-      const commands = pathData.match(/[ML][^ML]*/g);
-
+      
+      // Remove the Z command and extract all number pairs
+      // SVG paths use M (moveto) and L (lineto) followed by x,y coordinates
+      // The Z command closes the path, which Leaflet handles automatically
+      const cleanPath = pathData.replace(/Z\s*$/i, '').trim();
+      
+      // Match all commands (M, L) followed by their coordinates
+      const commands = cleanPath.match(/[ML][^MLZ]*/gi);
+      
       if (!commands) return coords;
 
       commands.forEach(cmd => {
-        const type = cmd[0];
-        const values = cmd.slice(1).trim().split(/[\s,]+/).map(Number);
-
-        for (let i = 0; i < values.length; i += 2) {
-          if (!isNaN(values[i]) && !isNaN(values[i + 1])) {
-            coords.push(svgToLatLng(values[i], values[i + 1]));
+        const type = cmd[0].toUpperCase();
+        // Extract all numbers from the command
+        const numbers = cmd.slice(1).match(/-?\d+\.?\d*/g);
+        
+        if (!numbers) return;
+        
+        // Convert number strings to actual numbers and pair them as x,y coordinates
+        for (let i = 0; i < numbers.length; i += 2) {
+          const x = parseFloat(numbers[i]);
+          const y = parseFloat(numbers[i + 1]);
+          
+          if (!isNaN(x) && !isNaN(y)) {
+            coords.push(svgToLatLng(x, y));
           }
         }
       });
