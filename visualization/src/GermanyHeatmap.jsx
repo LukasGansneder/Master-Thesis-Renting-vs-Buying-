@@ -13,26 +13,72 @@ const GermanyHeatmap = () => {
     const loadData = async () => {
       try {
         setLoading(true);
+        
         // Load both CSV files
-        const [scoresData, coordinatesData] = await Promise.all([
-          d3.csv('/data/export_score.csv'),
+        // Note: export_empirica_regio.csv uses semicolon separator and comma decimals
+        const [scoresText, coordinatesData] = await Promise.all([
+          fetch('/data/export_empirica_regio.csv').then(r => r.text()),
           d3.csv('/data/Gemeinden_coordinates.csv')
         ]);
 
-        // Create a map of region names to coordinates
-        // Note: coordinates file has RegionID, we need to match by region name
-        // For now, we'll use the main cities/regions from the scores data
+        // Parse semicolon-separated CSV with comma decimals
+        const scoresData = d3.dsvFormat(';').parse(scoresText);
         
+        // Create a map of RegionID to coordinates
+        // Coordinates have detailed IDs (e.g., 1001000), scores have district IDs (e.g., 1001)
+        const coordMap = new Map();
+        coordinatesData.forEach(d => {
+          const regionId = d.RegionID;
+          const lat = +d.lat;
+          const lon = +d.lon;
+          if (regionId && !isNaN(lat) && !isNaN(lon)) {
+            coordMap.set(regionId, { lat, lon });
+          }
+        });
+
         // Get unique years
         const uniqueYears = [...new Set(scoresData.map(d => +d.Jahr))].sort((a, b) => b - a);
         setYears(uniqueYears);
 
-        // Process and merge data
-        const processedData = scoresData.map(d => ({
-          region: d.Regionsname,
-          year: +d.Jahr,
-          score: +d.Score
-        }));
+        // Process and merge data with coordinates
+        const processedData = [];
+        scoresData.forEach(d => {
+          const regionId = d.RegionID;
+          const regionName = d.Regionsname;
+          const year = +d.Jahr;
+          // Convert comma decimal to period decimal
+          const scoreStr = d.Score.replace(',', '.');
+          const score = +scoreStr;
+          
+          if (isNaN(year) || isNaN(score)) return;
+          
+          // Find matching coordinates - try exact match first, then prefix match
+          let coords = coordMap.get(regionId);
+          if (!coords) {
+            // Try adding '000' suffix for district-level IDs
+            coords = coordMap.get(regionId + '000');
+          }
+          if (!coords) {
+            // Try finding any coordinate that starts with this regionId
+            for (const [coordId, coordValue] of coordMap.entries()) {
+              if (coordId.startsWith(regionId)) {
+                coords = coordValue;
+                break;
+              }
+            }
+          }
+          
+          if (coords) {
+            processedData.push({
+              regionId,
+              region: regionName,
+              year,
+              score,
+              lat: coords.lat,
+              lon: coords.lon
+            });
+          }
+        });
 
         setData(processedData);
         setLoading(false);
@@ -51,42 +97,6 @@ const GermanyHeatmap = () => {
   // Create a color scale
   const colorScale = d3.scaleSequential(d3.interpolateRdYlGn)
     .domain([-1, 1]); // Score range from data
-
-  // German cities approximate coordinates (main cities for visualization)
-  const cityCoordinates = {
-    'Flensburg': [54.78, 9.44],
-    'Kiel': [54.32, 10.13],
-    'Hamburg': [53.55, 10.00],
-    'Bremen': [53.08, 8.80],
-    'Berlin': [52.52, 13.40],
-    'Potsdam': [52.40, 13.06],
-    'Schwerin': [53.63, 11.41],
-    'Hannover': [52.37, 9.74],
-    'Magdeburg': [52.13, 11.64],
-    'Düsseldorf': [51.23, 6.78],
-    'Köln': [50.94, 6.96],
-    'Münster': [51.96, 7.63],
-    'Wuppertal': [51.26, 7.18],
-    'Essen': [51.46, 7.01],
-    'Dortmund': [51.51, 7.47],
-    'Duisburg': [51.43, 6.76],
-    'Bonn': [50.73, 7.10],
-    'Erfurt': [50.98, 11.03],
-    'Dresden': [51.05, 13.74],
-    'Leipzig': [51.34, 12.37],
-    'Chemnitz': [50.83, 12.92],
-    'Mainz': [50.00, 8.27],
-    'Wiesbaden': [50.08, 8.24],
-    'Saarbrücken': [49.23, 6.99],
-    'Stuttgart': [48.78, 9.18],
-    'Karlsruhe': [49.01, 8.40],
-    'Mannheim': [49.49, 8.47],
-    'Freiburg im Breisgau': [47.99, 7.85],
-    'München': [48.14, 11.58],
-    'Nürnberg': [49.45, 11.08],
-    'Augsburg': [48.37, 10.90],
-    'Regensburg': [49.02, 12.10],
-  };
 
   if (loading) {
     return (
@@ -149,15 +159,16 @@ const GermanyHeatmap = () => {
           />
           
           {yearData.map((item, idx) => {
-            const coords = cityCoordinates[item.region];
-            if (!coords) return null;
+            // Use coordinates from the data (already merged with coordinates)
+            const coords = [item.lat, item.lon];
+            if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return null;
 
             const color = colorScale(item.score);
-            const radius = 8 + Math.abs(item.score) * 7;
+            const radius = 5 + Math.abs(item.score) * 5;
 
             return (
               <CircleMarker
-                key={`${item.region}-${idx}`}
+                key={`${item.regionId}-${idx}`}
                 center={coords}
                 radius={radius}
                 fillColor={color}
@@ -168,6 +179,7 @@ const GermanyHeatmap = () => {
                 <Popup>
                   <div className="p-2">
                     <div className="font-bold text-lg">{item.region}</div>
+                    <div className="text-xs text-gray-500">ID: {item.regionId}</div>
                     <div className="text-sm">Year: {item.year}</div>
                     <div className="text-sm">
                       Score: <span className={item.score > 0 ? 'text-green-600' : 'text-red-600'}>
