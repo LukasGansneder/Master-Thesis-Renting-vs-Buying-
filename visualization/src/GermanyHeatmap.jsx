@@ -1,8 +1,36 @@
 import { MapContainer, TileLayer, Popup, SVGOverlay, useMap } from 'react-leaflet';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import BuildInfo from './BuildInfo';
+
+// Custom component to fit map to show all regions
+const FitBoundsControl = ({ bounds }) => {
+  const map = useMap();
+
+  const fitToBounds = () => {
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  };
+
+  return (
+    <div className="leaflet-top leaflet-right" style={{ marginTop: '80px', marginRight: '10px' }}>
+      <div className="leaflet-control leaflet-bar">
+        <button
+          onClick={fitToBounds}
+          className="bg-white hover:bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 border-0 cursor-pointer"
+          style={{ width: 'auto', height: 'auto', lineHeight: 'normal' }}
+          title="Fit all regions in view"
+        >
+          Fit All
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Custom component to render SVG regions as Leaflet layers
 const SVGRegions = ({ svgData, yearData, colorScale }) => {
@@ -153,6 +181,7 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
 };
 
 const GermanyHeatmap = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [selectedYear, setSelectedYear] = useState(2023);
   const [loading, setLoading] = useState(true);
@@ -160,6 +189,7 @@ const GermanyHeatmap = () => {
   const [svgData, setSvgData] = useState(null);
   const [showBasemap, setShowBasemap] = useState(false);
   const [colorScheme, setColorScheme] = useState('blue-white-red');
+  const [mapBounds, setMapBounds] = useState(null);
 
   // Define color schemes
   const colorSchemes = {
@@ -344,15 +374,59 @@ const GermanyHeatmap = () => {
     loadData();
   }, []);
 
+  // Calculate bounds from svgData once when it loads
+  useEffect(() => {
+    if (!svgData || mapBounds) return; // Only calculate once
+
+    const lat_offset = 55.051331;
+    const lat_scale = 0.009609;
+    const lon_offset = 5.800000;
+    const lon_scale = 0.015610;
+
+    const svgToLatLng = (x, y) => {
+      const lat = lat_offset - (lat_scale * y);
+      const lng = lon_offset + (lon_scale * x);
+      return [lat, lng];
+    };
+
+    // Calculate bounds from all SVG paths
+    let minLat = Infinity, maxLat = -Infinity;
+    let minLng = Infinity, maxLng = -Infinity;
+
+    svgData.forEach(region => {
+      const numbers = region.path.match(/-?\d+\.?\d*/g);
+      if (numbers) {
+        for (let i = 0; i < numbers.length; i += 2) {
+          const x = parseFloat(numbers[i]);
+          const y = parseFloat(numbers[i + 1]);
+          if (!isNaN(x) && !isNaN(y)) {
+            const [lat, lng] = svgToLatLng(x, y);
+            minLat = Math.min(minLat, lat);
+            maxLat = Math.max(maxLat, lat);
+            minLng = Math.min(minLng, lng);
+            maxLng = Math.max(maxLng, lng);
+          }
+        }
+      }
+    });
+
+    if (isFinite(minLat) && isFinite(maxLat) && isFinite(minLng) && isFinite(maxLng)) {
+      setMapBounds(L.latLngBounds([minLat, minLng], [maxLat, maxLng]));
+    }
+  }, [svgData, mapBounds]);
+
   // Filter data for selected year
   const yearData = data.filter(d => d.year === selectedYear);
 
-  // Create color scale based on selected scheme
+  // Create color scale based on selected scheme (memoized)
   const scheme = colorSchemes[colorScheme];
-  const colorScale = d3.scaleLinear()
-    .domain(scheme.domain)
-    .range(scheme.range)
-    .interpolate(d3.interpolateRgb);
+  const colorScale = useMemo(
+    () => d3.scaleLinear()
+      .domain(scheme.domain)
+      .range(scheme.range)
+      .interpolate(d3.interpolateRgb),
+    [scheme.domain, scheme.range]
+  );
 
   // Color for N/A values (if needed)
   const naColor = '#000000';
@@ -369,9 +443,17 @@ const GermanyHeatmap = () => {
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-md p-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Germany Rent vs. Buy Score Heatmap
-        </h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Germany Heatmap
+          </h1>
+          <button
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            ← Back to Home
+          </button>
+        </div>
         <div className="flex items-center justify-between mb-4">
           <p className="text-gray-600">
             Visualization of NPV scores across German regions (higher score = buying is more favorable)
@@ -476,52 +558,78 @@ const GermanyHeatmap = () => {
         </div>
       </div>
 
-      {/* Map */}
-      <div className="flex-1 relative">
-        <MapContainer
-          center={[51.1657, 10.4515]}
-          zoom={7}
-          className="h-full w-full"
-          style={{ background: '#ffffff' }}
-        >
-          {showBasemap && (
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-          )}
+      {/* Map and Stats Container */}
+      <div className="flex-1 flex relative">
+        {/* Map */}
+        <div className="flex-1 relative">
+          <MapContainer
+            center={[51.1657, 10.4515]}
+            zoom={7}
+            className="h-full w-full"
+            style={{ background: '#ffffff' }}
+            zoomAnimation={true}
+            fadeAnimation={true}
+            markerZoomAnimation={true}
+            zoomAnimationThreshold={4}
+          >
+            {showBasemap && (
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+            )}
 
-          {svgData && <SVGRegions svgData={svgData} yearData={yearData} colorScale={colorScale} />}
-        </MapContainer>
-      </div>
+            {svgData && (
+              <>
+                <SVGRegions 
+                  svgData={svgData} 
+                  yearData={yearData} 
+                  colorScale={colorScale}
+                />
+                {mapBounds && <FitBoundsControl bounds={mapBounds} />}
+              </>
+            )}
+          </MapContainer>
+        </div>
 
-      {/* Stats Footer */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        <div className="flex justify-around text-center">
-          <div>
-            <div className="text-2xl font-bold text-gray-800">{yearData.length}</div>
-            <div className="text-sm text-gray-600">Regions</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-red-600">
-              {yearData.filter(d => d.score > 0.5).length}
+        {/* Stats Sidebar */}
+        <div className="w-64 bg-white border-l border-gray-200 p-6 flex flex-col justify-center">
+          <h2 className="text-lg font-bold text-gray-800 mb-6 text-center">Statistics</h2>
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-gray-800">{yearData.length}</div>
+              <div className="text-sm text-gray-600 mt-1">Regions</div>
             </div>
-            <div className="text-sm text-gray-600">Favorable to Buy</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-blue-600">
-              {yearData.filter(d => d.score < -0.5).length}
+            <div className="border-t border-gray-200 pt-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-red-600">
+                  {yearData.filter(d => d.score > 0.5).length}
+                </div>
+                <div className="text-sm text-gray-600 mt-1">Favorable to Buy</div>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">Favorable to Rent</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-600">
-              {yearData.filter(d => d.score >= -0.5 && d.score <= 0.5).length}
+            <div className="border-t border-gray-200 pt-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">
+                  {yearData.filter(d => d.score < -0.5).length}
+                </div>
+                <div className="text-sm text-gray-600 mt-1">Favorable to Rent</div>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">Neutral</div>
+            <div className="border-t border-gray-200 pt-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-600">
+                  {yearData.filter(d => d.score >= -0.5 && d.score <= 0.5).length}
+                </div>
+                <div className="text-sm text-gray-600 mt-1">Neutral</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Build Info Bar */}
+      <BuildInfo />
     </div>
   );
 };
