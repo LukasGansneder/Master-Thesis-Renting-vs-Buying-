@@ -452,9 +452,9 @@ const GermanyHeatmap = () => {
 
           {svgData && (
             <>
-              <SVGRegions 
-                svgData={svgData} 
-                yearData={yearData} 
+              <SVGRegions
+                svgData={svgData}
+                yearData={yearData}
                 colorScale={colorScale}
               />
               <MapController bounds={mapBounds} onFitBoundsRef={fitBoundsRef} />
