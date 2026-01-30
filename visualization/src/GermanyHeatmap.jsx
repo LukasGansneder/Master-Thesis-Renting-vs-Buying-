@@ -159,6 +159,61 @@ const GermanyHeatmap = () => {
   const [years, setYears] = useState([]);
   const [svgData, setSvgData] = useState(null);
   const [showBasemap, setShowBasemap] = useState(false);
+  const [colorScheme, setColorScheme] = useState('blue-white-red');
+
+  // Define color schemes
+  const colorSchemes = {
+    // 2-color schemes
+    'blue-red': {
+      name: 'Blue-Red (2 colors)',
+      domain: [-1, 1],
+      range: ['#0000ff', '#ff0000'],
+      labels: { low: 'Blue (Rent)', high: 'Red (Buy)' }
+    },
+    'purple-orange': {
+      name: 'Purple-Orange (2 colors)',
+      domain: [-1, 1],
+      range: ['#9b59b6', '#ff8c00'],
+      labels: { low: 'Purple (Rent)', high: 'Orange (Buy)' }
+    },
+    'red-green': {
+      name: 'Red-Green (2 colors)',
+      domain: [-1, 1],
+      range: ['#e74c3c', '#27ae60'],
+      labels: { low: 'Red (Rent)', high: 'Green (Buy)' }
+    },
+    // 3-color schemes
+    'blue-white-red': {
+      name: 'Blue-White-Red (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#0000ff', '#ffffff', '#ff0000'],
+      labels: { low: 'Blue (Rent)', mid: 'White (Neutral)', high: 'Red (Buy)' }
+    },
+    'purple-gray-orange': {
+      name: 'Purple-Gray-Orange (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#9b59b6', '#95a5a6', '#ff8c00'],
+      labels: { low: 'Purple (Rent)', mid: 'Gray (Neutral)', high: 'Orange (Buy)' }
+    },
+    'red-yellow-green': {
+      name: 'Red-Yellow-Green (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#e74c3c', '#f1c40f', '#27ae60'],
+      labels: { low: 'Red (Rent)', mid: 'Yellow (Neutral)', high: 'Green (Buy)' }
+    },
+    'blue-beige-brown': {
+      name: 'Blue-Beige-Brown (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#3498db', '#f5deb3', '#8b4513'],
+      labels: { low: 'Blue (Rent)', mid: 'Beige (Neutral)', high: 'Brown (Buy)' }
+    },
+    'pink-white-teal': {
+      name: 'Pink-White-Teal (3 colors)',
+      domain: [-1, 0, 1],
+      range: ['#ff69b4', '#ffffff', '#008080'],
+      labels: { low: 'Pink (Rent)', mid: 'White (Neutral)', high: 'Teal (Buy)' }
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -238,10 +293,11 @@ const GermanyHeatmap = () => {
   // Filter data for selected year
   const yearData = data.filter(d => d.year === selectedYear);
 
-  // Create a blue-white-red diverging color scale
+  // Create color scale based on selected scheme
+  const scheme = colorSchemes[colorScheme];
   const colorScale = d3.scaleLinear()
-    .domain([-1, 0, 1])
-    .range(['#0000ff', '#ffffff', '#ff0000'])
+    .domain(scheme.domain)
+    .range(scheme.range)
     .interpolate(d3.interpolateRgb);
 
   // Color for N/A values (if needed)
@@ -268,6 +324,32 @@ const GermanyHeatmap = () => {
           </p>
 
           <div className="flex items-center gap-6">
+            {/* Color scheme selector */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="color-scheme" className="text-sm font-medium text-gray-700">
+                Color Scheme:
+              </label>
+              <select
+                id="color-scheme"
+                value={colorScheme}
+                onChange={(e) => setColorScheme(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <optgroup label="2-Color Schemes">
+                  <option value="blue-red">Blue-Red</option>
+                  <option value="purple-orange">Purple-Orange</option>
+                  <option value="red-green">Red-Green</option>
+                </optgroup>
+                <optgroup label="3-Color Schemes">
+                  <option value="blue-white-red">Blue-White-Red</option>
+                  <option value="purple-gray-orange">Purple-Gray-Orange</option>
+                  <option value="red-yellow-green">Red-Yellow-Green</option>
+                  <option value="blue-beige-brown">Blue-Beige-Brown</option>
+                  <option value="pink-white-teal">Pink-White-Teal</option>
+                </optgroup>
+              </select>
+            </div>
+
             {/* Basemap toggle */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -283,11 +365,18 @@ const GermanyHeatmap = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Score:</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-blue-600 font-medium">-1 (Rent)</span>
-                <div className="w-32 h-4 rounded" style={{
-                  background: 'linear-gradient(to right, #0000ff, #ffffff, #ff0000)'
-                }}></div>
-                <span className="text-xs text-red-600 font-medium">+1 (Buy)</span>
+                <span className="text-xs font-medium" style={{ color: scheme.range[0] }}>
+                  -1 (Rent)
+                </span>
+                <div 
+                  className="w-32 h-4 rounded" 
+                  style={{
+                    background: `linear-gradient(to right, ${scheme.range.join(', ')})`
+                  }}
+                ></div>
+                <span className="text-xs font-medium" style={{ color: scheme.range[scheme.range.length - 1] }}>
+                  +1 (Buy)
+                </span>
               </div>
             </div>
           </div>
