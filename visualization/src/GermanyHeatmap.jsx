@@ -256,124 +256,117 @@ const GermanyHeatmap = () => {
   }
 
   return (
-    <div className="h-screen flex bg-gray-50">
-      {/* Sidebar with year slider */}
-      <div className="w-20 bg-white shadow-lg flex flex-col items-center py-6 gap-4">
-        <div className="text-sm font-medium text-gray-700 writing-mode-vertical transform -rotate-180" style={{ writingMode: 'vertical-rl' }}>
-          Year
-        </div>
-        <div className="flex-1 flex items-center">
-          <input
-            type="range"
-            min={Math.min(...years)}
-            max={Math.max(...years)}
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(+e.target.value)}
-            step="1"
-            list="year-marks"
-            className="slider-vertical"
-            style={{
-              writingMode: 'bt-lr',
-              WebkitAppearance: 'slider-vertical',
-              width: '40px',
-              height: '400px',
-              transform: 'rotate(180deg)'
-            }}
-          />
-          <datalist id="year-marks">
-            {years.map(year => (
-              <option key={year} value={year} label={year.toString()} />
-            ))}
-          </datalist>
-        </div>
-        <div className="text-lg font-bold text-gray-800">
-          {selectedYear}
-        </div>
-      </div>
+    <div className="h-screen flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-md p-4">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          Germany Rent vs. Buy Score Heatmap
+        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-gray-600">
+            Visualization of NPV scores across German regions (higher score = buying is more favorable)
+          </p>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white shadow-md p-4">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Germany Rent vs. Buy Score Heatmap
-          </h1>
-          <div className="flex items-center justify-between">
-            <p className="text-gray-600">
-              Visualization of NPV scores across German regions (higher score = buying is more favorable)
-            </p>
+          <div className="flex items-center gap-6">
+            {/* Basemap toggle */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showBasemap}
+                onChange={(e) => setShowBasemap(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-gray-700">Show Basemap</span>
+            </label>
 
-            <div className="flex items-center gap-6">
-              {/* Basemap toggle */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showBasemap}
-                  onChange={(e) => setShowBasemap(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-gray-700">Show Basemap</span>
-              </label>
-
-              {/* Color legend */}
+            {/* Color legend */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Score:</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Score:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-blue-600 font-medium">-1 (Rent)</span>
-                  <div className="w-32 h-4 rounded" style={{
-                    background: 'linear-gradient(to right, #0000ff, #ffffff, #ff0000)'
-                  }}></div>
-                  <span className="text-xs text-red-600 font-medium">+1 (Buy)</span>
-                </div>
+                <span className="text-xs text-blue-600 font-medium">-1 (Rent)</span>
+                <div className="w-32 h-4 rounded" style={{
+                  background: 'linear-gradient(to right, #0000ff, #ffffff, #ff0000)'
+                }}></div>
+                <span className="text-xs text-red-600 font-medium">+1 (Buy)</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Map */}
-        <div className="flex-1 relative">
-          <MapContainer
-            center={[51.1657, 10.4515]}
-            zoom={7}
-            className="h-full w-full"
-            style={{ background: '#ffffff' }}
-          >
-            {showBasemap && (
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-            )}
-
-            {svgData && <SVGRegions svgData={svgData} yearData={yearData} colorScale={colorScale} />}
-          </MapContainer>
+        {/* Horizontal Year Slider */}
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-700">Year:</span>
+          <div className="flex-1 flex items-center gap-4">
+            <span className="text-sm text-gray-600">{Math.min(...years)}</span>
+            <input
+              type="range"
+              min={Math.min(...years)}
+              max={Math.max(...years)}
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(+e.target.value)}
+              step="1"
+              list="year-marks"
+              className="flex-1"
+              style={{
+                height: '8px'
+              }}
+            />
+            <span className="text-sm text-gray-600">{Math.max(...years)}</span>
+            <datalist id="year-marks">
+              {years.map(year => (
+                <option key={year} value={year} />
+              ))}
+            </datalist>
+          </div>
+          <div className="text-lg font-bold text-gray-800 min-w-[60px] text-center">
+            {selectedYear}
+          </div>
         </div>
+      </div>
 
-        {/* Stats Footer */}
-        <div className="bg-white border-t border-gray-200 p-4">
-          <div className="flex justify-around text-center">
-            <div>
-              <div className="text-2xl font-bold text-gray-800">{yearData.length}</div>
-              <div className="text-sm text-gray-600">Regions</div>
+      {/* Map */}
+      <div className="flex-1 relative">
+        <MapContainer
+          center={[51.1657, 10.4515]}
+          zoom={7}
+          className="h-full w-full"
+          style={{ background: '#ffffff' }}
+        >
+          {showBasemap && (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          )}
+
+          {svgData && <SVGRegions svgData={svgData} yearData={yearData} colorScale={colorScale} />}
+        </MapContainer>
+      </div>
+
+      {/* Stats Footer */}
+      <div className="bg-white border-t border-gray-200 p-4">
+        <div className="flex justify-around text-center">
+          <div>
+            <div className="text-2xl font-bold text-gray-800">{yearData.length}</div>
+            <div className="text-sm text-gray-600">Regions</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-red-600">
+              {yearData.filter(d => d.score > 0.5).length}
             </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">
-                {yearData.filter(d => d.score > 0.5).length}
-              </div>
-              <div className="text-sm text-gray-600">Favorable to Buy</div>
+            <div className="text-sm text-gray-600">Favorable to Buy</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-blue-600">
+              {yearData.filter(d => d.score < -0.5).length}
             </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {yearData.filter(d => d.score < -0.5).length}
-              </div>
-              <div className="text-sm text-gray-600">Favorable to Rent</div>
+            <div className="text-sm text-gray-600">Favorable to Rent</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-600">
+              {yearData.filter(d => d.score >= -0.5 && d.score <= 0.5).length}
             </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-600">
-                {yearData.filter(d => d.score >= -0.5 && d.score <= 0.5).length}
-              </div>
-              <div className="text-sm text-gray-600">Neutral</div>
-            </div>
+            <div className="text-sm text-gray-600">Neutral</div>
           </div>
         </div>
       </div>
