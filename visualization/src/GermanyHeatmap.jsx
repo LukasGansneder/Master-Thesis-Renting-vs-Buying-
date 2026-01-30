@@ -39,10 +39,10 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
     //
     // Transformation: lat = lat_offset - (lat_scale * y)
     //                 lon = lon_offset + (lon_scale * x)
-    const lat_offset = 54.501331;
+    const lat_offset = 55.051331;
     const lat_scale = 0.009609;
-    const lon_offset = 5.700000;
-    const lon_scale = 0.015714;
+    const lon_offset = 5.800000;
+    const lon_scale = 0.015610;
 
     // Function to convert SVG coordinates to lat/lng using calibrated transformation
     const svgToLatLng = (x, y) => {
@@ -55,37 +55,37 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
     // Returns array of polygon coordinate arrays (to handle multi-polygons)
     const parseSVGPath = (pathData) => {
       const polygons = [];
-      
+
       // Split path by Z command to find separate sub-paths
       // Each sub-path represents a separate polygon (main region or islands)
       const subPaths = pathData.split(/Z\s*/i).filter(p => p.trim());
-      
+
       subPaths.forEach(subPath => {
         const coords = [];
-        
+
         // Match all commands (M, L) followed by their coordinates
         const commands = subPath.trim().match(/[ML][^MLZ]*/gi);
-        
+
         if (!commands) return;
 
         commands.forEach(cmd => {
           const type = cmd[0].toUpperCase();
           // Extract all numbers from the command
           const numbers = cmd.slice(1).match(/-?\d+\.?\d*/g);
-          
+
           if (!numbers) return;
-          
+
           // Convert number strings to actual numbers and pair them as x,y coordinates
           for (let i = 0; i < numbers.length; i += 2) {
             const x = parseFloat(numbers[i]);
             const y = parseFloat(numbers[i + 1]);
-            
+
             if (!isNaN(x) && !isNaN(y)) {
               coords.push(svgToLatLng(x, y));
             }
           }
         });
-        
+
         // Only add if we have at least 3 points for a valid polygon
         if (coords.length >= 3) {
           polygons.push(coords);
