@@ -27,21 +27,27 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
       scoreMap.set(item.kgs, item);
     });
 
-    // SVG viewBox dimensions and Germany bounds
+    // SVG viewBox dimensions
     const svgWidth = 600;
     const svgHeight = 814;
 
-    // Germany approximate bounds for the LAEA projection in the SVG
-    // These are the geographic bounds that correspond to the SVG coordinate system
-    const bounds = [
-      [47.3, 5.9],  // Southwest corner (lat, lon)
-      [55.1, 15.0]  // Northeast corner (lat, lon)
-    ];
+    // Calibrated transformation parameters based on reference points
+    // Reference points used:
+    // - Flensburg (238, 29) -> (54.78°N, 9.44°E)
+    // - Berlin (490, 262) -> (52.52°N, 13.40°E)  
+    // - München (380, 720) -> (48.14°N, 11.58°E)
+    //
+    // Transformation: lat = lat_offset - (lat_scale * y)
+    //                 lon = lon_offset + (lon_scale * x)
+    const lat_offset = 54.501331;
+    const lat_scale = 0.009609;
+    const lon_offset = 5.700000;
+    const lon_scale = 0.015714;
 
-    // Function to convert SVG coordinates to lat/lng
+    // Function to convert SVG coordinates to lat/lng using calibrated transformation
     const svgToLatLng = (x, y) => {
-      const lat = bounds[1][0] - ((y / svgHeight) * (bounds[1][0] - bounds[0][0]));
-      const lng = bounds[0][1] + ((x / svgWidth) * (bounds[1][1] - bounds[0][1]));
+      const lat = lat_offset - (lat_scale * y);
+      const lng = lon_offset + (lon_scale * x);
       return [lat, lng];
     };
 
