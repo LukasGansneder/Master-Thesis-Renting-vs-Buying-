@@ -46,38 +46,47 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
     };
 
     // Function to parse SVG path and convert to lat/lng coordinates
+    // Returns array of polygon coordinate arrays (to handle multi-polygons)
     const parseSVGPath = (pathData) => {
-      const coords = [];
+      const polygons = [];
       
-      // Remove the Z command and extract all number pairs
-      // SVG paths use M (moveto) and L (lineto) followed by x,y coordinates
-      // The Z command closes the path, which Leaflet handles automatically
-      const cleanPath = pathData.replace(/Z\s*$/i, '').trim();
+      // Split path by Z command to find separate sub-paths
+      // Each sub-path represents a separate polygon (main region or islands)
+      const subPaths = pathData.split(/Z\s*/i).filter(p => p.trim());
       
-      // Match all commands (M, L) followed by their coordinates
-      const commands = cleanPath.match(/[ML][^MLZ]*/gi);
-      
-      if (!commands) return coords;
+      subPaths.forEach(subPath => {
+        const coords = [];
+        
+        // Match all commands (M, L) followed by their coordinates
+        const commands = subPath.trim().match(/[ML][^MLZ]*/gi);
+        
+        if (!commands) return;
 
-      commands.forEach(cmd => {
-        const type = cmd[0].toUpperCase();
-        // Extract all numbers from the command
-        const numbers = cmd.slice(1).match(/-?\d+\.?\d*/g);
-        
-        if (!numbers) return;
-        
-        // Convert number strings to actual numbers and pair them as x,y coordinates
-        for (let i = 0; i < numbers.length; i += 2) {
-          const x = parseFloat(numbers[i]);
-          const y = parseFloat(numbers[i + 1]);
+        commands.forEach(cmd => {
+          const type = cmd[0].toUpperCase();
+          // Extract all numbers from the command
+          const numbers = cmd.slice(1).match(/-?\d+\.?\d*/g);
           
-          if (!isNaN(x) && !isNaN(y)) {
-            coords.push(svgToLatLng(x, y));
+          if (!numbers) return;
+          
+          // Convert number strings to actual numbers and pair them as x,y coordinates
+          for (let i = 0; i < numbers.length; i += 2) {
+            const x = parseFloat(numbers[i]);
+            const y = parseFloat(numbers[i + 1]);
+            
+            if (!isNaN(x) && !isNaN(y)) {
+              coords.push(svgToLatLng(x, y));
+            }
           }
+        });
+        
+        // Only add if we have at least 3 points for a valid polygon
+        if (coords.length >= 3) {
+          polygons.push(coords);
         }
       });
 
-      return coords;
+      return polygons;
     };
 
     // Render each region
@@ -86,11 +95,16 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
 
       if (!scoreData) return; // Skip regions without data
 
-      const coords = parseSVGPath(regionInfo.path);
+      const polygonCoords = parseSVGPath(regionInfo.path);
 
-      // if (coords.length < 3) return; // Need at least 3 points for a polygon
+      if (polygonCoords.length === 0) return; // Skip if no valid polygons
 
       const color = colorScale(scoreData.score);
+
+      // L.polygon can handle both single polygons and multi-polygons
+      // Single polygon: [[lat,lng], [lat,lng], ...]
+      // Multi-polygon: [[[lat,lng], [lat,lng], ...], [[lat,lng], [lat,lng], ...]]
+      const coords = polygonCoords.length === 1 ? polygonCoords[0] : polygonCoords;
 
       const polygon = L.polygon(coords, {
         fillColor: color,
