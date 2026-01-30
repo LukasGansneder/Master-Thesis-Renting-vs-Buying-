@@ -30,7 +30,7 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
     // SVG viewBox dimensions and Germany bounds
     const svgWidth = 600;
     const svgHeight = 814;
-    
+
     // Germany approximate bounds for the LAEA projection in the SVG
     // These are the geographic bounds that correspond to the SVG coordinate system
     const bounds = [
@@ -49,13 +49,13 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
     const parseSVGPath = (pathData) => {
       const coords = [];
       const commands = pathData.match(/[ML][^ML]*/g);
-      
+
       if (!commands) return coords;
 
       commands.forEach(cmd => {
         const type = cmd[0];
         const values = cmd.slice(1).trim().split(/[\s,]+/).map(Number);
-        
+
         for (let i = 0; i < values.length; i += 2) {
           if (!isNaN(values[i]) && !isNaN(values[i + 1])) {
             coords.push(svgToLatLng(values[i], values[i + 1]));
@@ -67,17 +67,17 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
     };
 
     // Render each region
-    Object.entries(svgData).forEach(([kgs, regionInfo]) => {
-      const scoreData = scoreMap.get(kgs);
-      
+    svgData.forEach((regionInfo) => {
+      const scoreData = scoreMap.get(regionInfo.kgs);
+
       if (!scoreData) return; // Skip regions without data
-      
+
       const coords = parseSVGPath(regionInfo.path);
-      
-      if (coords.length < 3) return; // Need at least 3 points for a polygon
+
+      // if (coords.length < 3) return; // Need at least 3 points for a polygon
 
       const color = colorScale(scoreData.score);
-      
+
       const polygon = L.polygon(coords, {
         fillColor: color,
         fillOpacity: 0.7,
@@ -97,9 +97,9 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
             </span>
           </div>
           <div style="font-size: 12px; color: #666; margin-top: 4px;">
-            ${scoreData.score > 0.5 ? '✓ Buying favorable' : 
-              scoreData.score < -0.5 ? '✓ Renting favorable' : 
-              '≈ Neutral'}
+            ${scoreData.score > 0.5 ? '✓ Buying favorable' :
+          scoreData.score < -0.5 ? '✓ Renting favorable' :
+            '≈ Neutral'}
           </div>
         </div>
       `);
@@ -129,7 +129,7 @@ const GermanyHeatmap = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        
+
         // Load CSV files and SVG
         const [scoresText, svgText] = await Promise.all([
           fetch('/data/export_empirica_regio.csv').then(r => r.text()),
@@ -138,26 +138,27 @@ const GermanyHeatmap = () => {
 
         // Parse semicolon-separated CSV with comma decimals
         const scoresData = d3.dsvFormat(';').parse(scoresText);
-        
+
         // Parse SVG to extract region shapes
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
         const paths = svgDoc.querySelectorAll('path[data-kgs]');
-        
-        const regions = {};
+
+        const regions = [];
         paths.forEach(path => {
           const kgs = path.getAttribute('data-kgs');
           const id = path.getAttribute('id');
           const d = path.getAttribute('d');
           if (kgs && d) {
-            regions[kgs] = {
+            regions.push({
               id,
               path: d,
-              name: id
-            };
+              name: id,
+              kgs
+            });
           }
         });
-        
+
         setSvgData(regions);
 
         // Get unique years
@@ -173,12 +174,12 @@ const GermanyHeatmap = () => {
           // Convert comma decimal to period decimal
           const scoreStr = d.Score.replace(',', '.');
           const score = +scoreStr;
-          
+
           if (isNaN(year) || isNaN(score)) return;
-          
+
           // Map regionId to data-kgs format (e.g., 1001 -> "01001")
           const kgs = regionId.toString().padStart(5, '0');
-          
+
           processedData.push({
             regionId,
             kgs,
@@ -224,7 +225,7 @@ const GermanyHeatmap = () => {
         <p className="text-gray-600 mb-4">
           Visualization of NPV scores across German regions (higher score = buying is more favorable)
         </p>
-        
+
         {/* Year Selector */}
         <div className="flex items-center gap-4">
           <label htmlFor="year-select" className="text-gray-700 font-medium">
@@ -265,7 +266,7 @@ const GermanyHeatmap = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          
+
           {svgData && <SVGRegions svgData={svgData} yearData={yearData} colorScale={colorScale} />}
         </MapContainer>
       </div>
