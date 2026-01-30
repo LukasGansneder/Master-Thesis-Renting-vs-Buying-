@@ -1,33 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 
 const BuildInfo = () => {
-  const [buildInfo, setBuildInfo] = useState({
-    commit: 'dev',
-    time: new Date().toISOString(),
-    isDev: true
-  });
-
-  useEffect(() => {
-    // Try to fetch build info if available (in production builds)
-    // In dev mode, we'll show dev indicator
+  const buildInfo = useMemo(() => {
     const isDev = import.meta.env.DEV;
     
     if (isDev) {
-      setBuildInfo({
+      return {
         commit: 'development',
         time: new Date().toISOString(),
         isDev: true
-      });
+      };
     } else {
-      // In production, you could inject these values during build
       const commit = import.meta.env.VITE_COMMIT_SHA || 'unknown';
       const buildTime = import.meta.env.VITE_BUILD_TIME || new Date().toISOString();
       
-      setBuildInfo({
+      return {
         commit,
         time: buildTime,
         isDev: false
-      });
+      };
     }
   }, []);
 

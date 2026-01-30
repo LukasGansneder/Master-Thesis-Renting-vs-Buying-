@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Popup, SVGOverlay, useMap } from 'react-leaflet';
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
 import L from 'leaflet';
@@ -55,10 +55,6 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
       scoreMap.set(item.kgs, item);
     });
 
-    // SVG viewBox dimensions
-    const svgWidth = 600;
-    const svgHeight = 814;
-
     // Calibrated transformation parameters based on reference points
     // Reference points used:
     // - Flensburg (238, 29) -> (54.78°N, 9.44°E)
@@ -97,7 +93,6 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
         if (!commands) return;
 
         commands.forEach(cmd => {
-          const type = cmd[0].toUpperCase();
           // Extract all numbers from the command
           const numbers = cmd.slice(1).match(/-?\d+\.?\d*/g);
 
@@ -189,7 +184,6 @@ const GermanyHeatmap = () => {
   const [svgData, setSvgData] = useState(null);
   const [showBasemap, setShowBasemap] = useState(false);
   const [colorScheme, setColorScheme] = useState('blue-white-red');
-  const [mapBounds, setMapBounds] = useState(null);
 
   // Define color schemes
   const colorSchemes = {
@@ -374,9 +368,9 @@ const GermanyHeatmap = () => {
     loadData();
   }, []);
 
-  // Calculate bounds from svgData once when it loads
-  useEffect(() => {
-    if (!svgData || mapBounds) return; // Only calculate once
+  // Calculate bounds from svgData once when it loads (memoized)
+  const mapBounds = useMemo(() => {
+    if (!svgData) return null;
 
     const lat_offset = 55.051331;
     const lat_scale = 0.009609;
@@ -411,9 +405,10 @@ const GermanyHeatmap = () => {
     });
 
     if (isFinite(minLat) && isFinite(maxLat) && isFinite(minLng) && isFinite(maxLng)) {
-      setMapBounds(L.latLngBounds([minLat, minLng], [maxLat, maxLng]));
+      return L.latLngBounds([minLat, minLng], [maxLat, maxLng]);
     }
-  }, [svgData, mapBounds]);
+    return null;
+  }, [svgData]);
 
   // Filter data for selected year
   const yearData = data.filter(d => d.year === selectedYear);
@@ -427,9 +422,6 @@ const GermanyHeatmap = () => {
       .interpolate(d3.interpolateRgb),
     [scheme.domain, scheme.range]
   );
-
-  // Color for N/A values (if needed)
-  const naColor = '#000000';
 
   if (loading) {
     return (
