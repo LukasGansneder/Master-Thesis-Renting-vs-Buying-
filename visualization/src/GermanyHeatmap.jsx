@@ -1,46 +1,170 @@
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
-import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Popup, SVGOverlay, useMap } from 'react-leaflet';
+import { useEffect, useState, useRef } from 'react';
 import * as d3 from 'd3';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Custom component to render SVG regions as Leaflet layers
+const SVGRegions = ({ svgData, yearData, colorScale }) => {
+  const map = useMap();
+  const layerGroupRef = useRef(null);
+
+  useEffect(() => {
+    if (!map || !svgData || !yearData || yearData.length === 0) return;
+
+    // Remove existing layer group if any
+    if (layerGroupRef.current) {
+      map.removeLayer(layerGroupRef.current);
+    }
+
+    // Create a new layer group
+    const layerGroup = L.layerGroup().addTo(map);
+    layerGroupRef.current = layerGroup;
+
+    // Create a map of kgs to score data
+    const scoreMap = new Map();
+    yearData.forEach(item => {
+      scoreMap.set(item.kgs, item);
+    });
+
+    // SVG viewBox dimensions and Germany bounds
+    const svgWidth = 600;
+    const svgHeight = 814;
+    
+    // Germany approximate bounds for the LAEA projection in the SVG
+    // These are the geographic bounds that correspond to the SVG coordinate system
+    const bounds = [
+      [47.3, 5.9],  // Southwest corner (lat, lon)
+      [55.1, 15.0]  // Northeast corner (lat, lon)
+    ];
+
+    // Function to convert SVG coordinates to lat/lng
+    const svgToLatLng = (x, y) => {
+      const lat = bounds[1][0] - ((y / svgHeight) * (bounds[1][0] - bounds[0][0]));
+      const lng = bounds[0][1] + ((x / svgWidth) * (bounds[1][1] - bounds[0][1]));
+      return [lat, lng];
+    };
+
+    // Function to parse SVG path and convert to lat/lng coordinates
+    const parseSVGPath = (pathData) => {
+      const coords = [];
+      const commands = pathData.match(/[ML][^ML]*/g);
+      
+      if (!commands) return coords;
+
+      commands.forEach(cmd => {
+        const type = cmd[0];
+        const values = cmd.slice(1).trim().split(/[\s,]+/).map(Number);
+        
+        for (let i = 0; i < values.length; i += 2) {
+          if (!isNaN(values[i]) && !isNaN(values[i + 1])) {
+            coords.push(svgToLatLng(values[i], values[i + 1]));
+          }
+        }
+      });
+
+      return coords;
+    };
+
+    // Render each region
+    Object.entries(svgData).forEach(([kgs, regionInfo]) => {
+      const scoreData = scoreMap.get(kgs);
+      
+      if (!scoreData) return; // Skip regions without data
+      
+      const coords = parseSVGPath(regionInfo.path);
+      
+      if (coords.length < 3) return; // Need at least 3 points for a polygon
+
+      const color = colorScale(scoreData.score);
+      
+      const polygon = L.polygon(coords, {
+        fillColor: color,
+        fillOpacity: 0.7,
+        color: '#333',
+        weight: 1,
+        smoothFactor: 0.5
+      });
+
+      polygon.bindPopup(`
+        <div style="padding: 8px;">
+          <div style="font-weight: bold; font-size: 16px;">${scoreData.region}</div>
+          <div style="font-size: 12px; color: #666;">ID: ${scoreData.regionId}</div>
+          <div style="font-size: 14px;">Year: ${scoreData.year}</div>
+          <div style="font-size: 14px;">
+            Score: <span style="color: ${scoreData.score > 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">
+              ${scoreData.score.toFixed(3)}
+            </span>
+          </div>
+          <div style="font-size: 12px; color: #666; margin-top: 4px;">
+            ${scoreData.score > 0.5 ? '✓ Buying favorable' : 
+              scoreData.score < -0.5 ? '✓ Renting favorable' : 
+              '≈ Neutral'}
+          </div>
+        </div>
+      `);
+
+      polygon.addTo(layerGroup);
+    });
+
+    // Cleanup function
+    return () => {
+      if (layerGroupRef.current) {
+        map.removeLayer(layerGroupRef.current);
+      }
+    };
+  }, [map, svgData, yearData, colorScale]);
+
+  return null;
+};
 
 const GermanyHeatmap = () => {
   const [data, setData] = useState([]);
   const [selectedYear, setSelectedYear] = useState(2023);
   const [loading, setLoading] = useState(true);
   const [years, setYears] = useState([]);
+  const [svgData, setSvgData] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         
-        // Load both CSV files
-        // Note: export_empirica_regio.csv uses semicolon separator and comma decimals
-        const [scoresText, coordinatesData] = await Promise.all([
+        // Load CSV files and SVG
+        const [scoresText, svgText] = await Promise.all([
           fetch('/data/export_empirica_regio.csv').then(r => r.text()),
-          d3.csv('/data/Gemeinden_coordinates.csv')
+          fetch('/data/landkreise.svg').then(r => r.text())
         ]);
 
         // Parse semicolon-separated CSV with comma decimals
         const scoresData = d3.dsvFormat(';').parse(scoresText);
         
-        // Create a map of RegionID to coordinates
-        // Coordinates have detailed IDs (e.g., 1001000), scores have district IDs (e.g., 1001)
-        const coordMap = new Map();
-        coordinatesData.forEach(d => {
-          const regionId = d.RegionID;
-          const lat = +d.lat;
-          const lon = +d.lon;
-          if (regionId && !isNaN(lat) && !isNaN(lon)) {
-            coordMap.set(regionId, { lat, lon });
+        // Parse SVG to extract region shapes
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+        const paths = svgDoc.querySelectorAll('path[data-kgs]');
+        
+        const regions = {};
+        paths.forEach(path => {
+          const kgs = path.getAttribute('data-kgs');
+          const id = path.getAttribute('id');
+          const d = path.getAttribute('d');
+          if (kgs && d) {
+            regions[kgs] = {
+              id,
+              path: d,
+              name: id
+            };
           }
         });
+        
+        setSvgData(regions);
 
         // Get unique years
         const uniqueYears = [...new Set(scoresData.map(d => +d.Jahr))].sort((a, b) => b - a);
         setYears(uniqueYears);
 
-        // Process and merge data with coordinates
+        // Process score data
         const processedData = [];
         scoresData.forEach(d => {
           const regionId = d.RegionID;
@@ -52,32 +176,16 @@ const GermanyHeatmap = () => {
           
           if (isNaN(year) || isNaN(score)) return;
           
-          // Find matching coordinates - try exact match first, then prefix match
-          let coords = coordMap.get(regionId);
-          if (!coords) {
-            // Try adding '000' suffix for district-level IDs
-            coords = coordMap.get(regionId + '000');
-          }
-          if (!coords) {
-            // Try finding any coordinate that starts with this regionId
-            for (const [coordId, coordValue] of coordMap.entries()) {
-              if (coordId.startsWith(regionId)) {
-                coords = coordValue;
-                break;
-              }
-            }
-          }
+          // Map regionId to data-kgs format (e.g., 1001 -> "01001")
+          const kgs = regionId.toString().padStart(5, '0');
           
-          if (coords) {
-            processedData.push({
-              regionId,
-              region: regionName,
-              year,
-              score,
-              lat: coords.lat,
-              lon: coords.lon
-            });
-          }
+          processedData.push({
+            regionId,
+            kgs,
+            region: regionName,
+            year,
+            score
+          });
         });
 
         setData(processedData);
@@ -158,44 +266,7 @@ const GermanyHeatmap = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {yearData.map((item, idx) => {
-            // Use coordinates from the data (already merged with coordinates)
-            const coords = [item.lat, item.lon];
-            if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return null;
-
-            const color = colorScale(item.score);
-            const radius = 5 + Math.abs(item.score) * 5;
-
-            return (
-              <CircleMarker
-                key={`${item.regionId}-${idx}`}
-                center={coords}
-                radius={radius}
-                fillColor={color}
-                fillOpacity={0.7}
-                color="#333"
-                weight={1}
-              >
-                <Popup>
-                  <div className="p-2">
-                    <div className="font-bold text-lg">{item.region}</div>
-                    <div className="text-xs text-gray-500">ID: {item.regionId}</div>
-                    <div className="text-sm">Year: {item.year}</div>
-                    <div className="text-sm">
-                      Score: <span className={item.score > 0 ? 'text-green-600' : 'text-red-600'}>
-                        {item.score.toFixed(3)}
-                      </span>
-                    </div>
-                    <div className="text-xs mt-1 text-gray-600">
-                      {item.score > 0.5 ? '✓ Buying favorable' : 
-                       item.score < -0.5 ? '✓ Renting favorable' : 
-                       '≈ Neutral'}
-                    </div>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            );
-          })}
+          {svgData && <SVGRegions svgData={svgData} yearData={yearData} colorScale={colorScale} />}
         </MapContainer>
       </div>
 
