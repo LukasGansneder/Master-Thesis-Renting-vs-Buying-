@@ -38,7 +38,7 @@ jobs:
 
       - name: Build
         working-directory: ./visualization
-        run: npm run build --base=/Master-Thesis-Renting-vs-Buying-/
+        run: npm run build
         env:
           NODE_ENV: production
 

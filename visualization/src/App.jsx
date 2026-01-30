@@ -4,7 +4,7 @@ import GermanyHeatmap from './GermanyHeatmap';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/Master-Thesis-Renting-vs-Buying-">
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/germany-heatmap" element={<GermanyHeatmap />} />
