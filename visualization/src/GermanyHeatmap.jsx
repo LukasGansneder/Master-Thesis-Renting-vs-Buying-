@@ -591,11 +591,11 @@ const GermanyHeatmap = () => {
                 <div>Regions</div>
               </div>
               <div className="text-center">
-                <div className="font-bold text-sm text-red-600">{yearData.filter(d => d.score > 0.5).length}</div>
+                <div className="font-bold text-sm" style={{ color: colorSchemes[colorScheme].range.slice(-1)[0] }}>{yearData.filter(d => d["score" + selectedPercentile] > 0.5).length}</div>
                 <div>Buy</div>
               </div>
               <div className="text-center">
-                <div className="font-bold text-sm text-blue-600">{yearData.filter(d => d.score < -0.5).length}</div>
+                <div className="font-bold text-sm" style={{ color: colorSchemes[colorScheme].range[0] }}>{yearData.filter(d => d["score" + selectedPercentile] < -0.5).length}</div>
                 <div>Rent</div>
               </div>
             </div>
