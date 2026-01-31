@@ -23,7 +23,7 @@ const LandingPage = () => {
         </div>
 
         {/* Visualizations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {/* Germany Heatmap Card */}
           <div
             onClick={() => navigate('/germany-heatmap')}
@@ -114,6 +114,26 @@ const LandingPage = () => {
                 <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Coming Soon Card */}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden opacity-60">
+            <div className="h-48 bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center">
+              <div className="text-white text-center">
+                <svg className="w-24 h-24 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <h3 className="text-2xl font-bold">Coming Soon</h3>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-500 mb-4">
+                Additional visualizations and analysis tools will be added here.
+              </p>
+              <div className="text-gray-400 font-semibold">
+                More visualizations coming soon...
               </div>
             </div>
           </div>
