@@ -124,13 +124,13 @@ const SVGRegions = ({ svgData, yearData, colorScale, selectedPercentile }) => {
       let score, isMissingData;
       if (selectedPercentile === 5) {
         score = scoreData.score5;
-        isMissingData = scoreData.isNaN5;
+        isMissingData = scoreData.isMissingData5;
       } else if (selectedPercentile === 95) {
         score = scoreData.score95;
-        isMissingData = scoreData.isNaN95;
+        isMissingData = scoreData.isMissingData95;
       } else {
         score = scoreData.score50;
-        isMissingData = scoreData.isNaN50;
+        isMissingData = scoreData.isMissingData50;
       }
 
       const color = colorScale(score);
@@ -374,9 +374,9 @@ const GermanyHeatmap = () => {
             score5,
             score50,
             score95,
-            isNaN5: !d[SCORE_5_COL]?.trim() || isNaN(score5),
-            isNaN50: !d[SCORE_50_COL]?.trim() || isNaN(score50),
-            isNaN95: !d[SCORE_95_COL]?.trim() || isNaN(score95)
+            isMissingData5: !d[SCORE_5_COL]?.trim() || isNaN(score5),
+            isMissingData50: !d[SCORE_50_COL]?.trim() || isNaN(score50),
+            isMissingData95: !d[SCORE_95_COL]?.trim() || isNaN(score95)
           });
         });
 
