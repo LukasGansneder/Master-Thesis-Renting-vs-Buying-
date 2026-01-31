@@ -1,15 +1,15 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route, HashRouter } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import GermanyHeatmap from './GermanyHeatmap';
 
 function App() {
   return (
-    <Router basename="/Master-Thesis-Renting-vs-Buying-">
+    <HashRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/germany-heatmap" element={<GermanyHeatmap />} />
+        <Route path="germany-heatmap" element={<GermanyHeatmap />} />
       </Routes>
-    </Router>
+    </HashRouter>
   );
 }
 
