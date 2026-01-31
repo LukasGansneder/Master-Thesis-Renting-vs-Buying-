@@ -120,17 +120,17 @@ const SVGRegions = ({ svgData, yearData, colorScale, selectedPercentile }) => {
 
       if (polygonCoords.length === 0) return; // Skip if no valid polygons
 
-      // Select the appropriate score and isNaN flag based on percentile
-      let score, isNaN;
+      // Select the appropriate score and missing data flag based on percentile
+      let score, isMissingData;
       if (selectedPercentile === 5) {
         score = scoreData.score5;
-        isNaN = scoreData.isNaN5;
+        isMissingData = scoreData.isNaN5;
       } else if (selectedPercentile === 95) {
         score = scoreData.score95;
-        isNaN = scoreData.isNaN95;
+        isMissingData = scoreData.isNaN95;
       } else {
         score = scoreData.score50;
-        isNaN = scoreData.isNaN50;
+        isMissingData = scoreData.isNaN50;
       }
 
       const color = colorScale(score);
@@ -141,7 +141,7 @@ const SVGRegions = ({ svgData, yearData, colorScale, selectedPercentile }) => {
       const coords = polygonCoords.length === 1 ? polygonCoords[0] : polygonCoords;
 
       const polygon = L.polygon(coords, {
-        fillColor: isNaN ? "#444" : color,
+        fillColor: isMissingData ? "#444" : color,
         fillOpacity: 0.7,
         color: '#333',
         weight: 1,
@@ -154,14 +154,14 @@ const SVGRegions = ({ svgData, yearData, colorScale, selectedPercentile }) => {
           <div style="font-size: 12px; color: #666;">ID: ${scoreData.regionId}</div>
           <div style="font-size: 14px;">Year: ${scoreData.year}</div>
           <div style="font-size: 14px;">
-            Score (${selectedPercentile}% Percentile): <span style="color: ${isNaN ? '#444' : score > 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">
-              ${isNaN ? "N/A" : score.toFixed(3)}
+            Score (${selectedPercentile}% Percentile): <span style="color: ${isMissingData ? '#444' : score > 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">
+              ${isMissingData ? "N/A" : score.toFixed(3)}
             </span>
           </div>
           <div style="font-size: 12px; color: #666; margin-top: 4px;">
             ${score > 0.5 ? '✓ Buying favorable' :
           score < -0.5 ? '✓ Renting favorable' :
-            isNaN ? '' :
+            isMissingData ? '' :
               '≈ Neutral'}
           </div>
         </div>
@@ -191,6 +191,11 @@ const GermanyHeatmap = () => {
   const [colorScheme, setColorScheme] = useState('navy-silver-amber');
   const [selectedPercentile, setSelectedPercentile] = useState(50);
   const fitBoundsRef = useRef(null);
+
+  // Column names from CSV
+  const SCORE_5_COL = 'Score (5% Perzentil)';
+  const SCORE_50_COL = 'Score (50% Perzentil)';
+  const SCORE_95_COL = 'Score (95% Perzentil)';
 
   // Define color schemes
   const colorSchemes = {
@@ -348,9 +353,9 @@ const GermanyHeatmap = () => {
           const year = +d.Jahr;
           
           // Convert comma decimal to period decimal for all percentiles
-          const score5Str = d['Score (5% Perzentil)']?.replace(',', '.');
-          const score50Str = d['Score (50% Perzentil)']?.replace(',', '.');
-          const score95Str = d['Score (95% Perzentil)']?.replace(',', '.');
+          const score5Str = d[SCORE_5_COL]?.replace(',', '.');
+          const score50Str = d[SCORE_50_COL]?.replace(',', '.');
+          const score95Str = d[SCORE_95_COL]?.replace(',', '.');
           
           const score5 = +score5Str;
           const score50 = +score50Str;
@@ -369,9 +374,9 @@ const GermanyHeatmap = () => {
             score5,
             score50,
             score95,
-            isNaN5: !d['Score (5% Perzentil)']?.trim() || isNaN(score5),
-            isNaN50: !d['Score (50% Perzentil)']?.trim() || isNaN(score50),
-            isNaN95: !d['Score (95% Perzentil)']?.trim() || isNaN(score95)
+            isNaN5: !d[SCORE_5_COL]?.trim() || isNaN(score5),
+            isNaN50: !d[SCORE_50_COL]?.trim() || isNaN(score50),
+            isNaN95: !d[SCORE_95_COL]?.trim() || isNaN(score95)
           });
         });
 
