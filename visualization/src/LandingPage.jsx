@@ -29,11 +29,11 @@ const LandingPage = () => {
             onClick={() => navigate('/germany-heatmap')}
             className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer overflow-hidden group"
           >
-            <div className="h-48 relative overflow-hidden">
+            <div className="h-48 relative overflow-hidden bg-gray-50">
               <img 
                 src="/germany-heatmap-hero.png" 
                 alt="Germany Heatmap Visualization" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
             <div className="p-6">
@@ -76,11 +76,11 @@ const LandingPage = () => {
             onClick={() => navigate('/histogram-view')}
             className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer overflow-hidden group"
           >
-            <div className="h-48 relative overflow-hidden">
+            <div className="h-48 relative overflow-hidden bg-gray-50">
               <img 
                 src="/histogram-hero.png" 
                 alt="Histogram Visualization" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
             <div className="p-6">
