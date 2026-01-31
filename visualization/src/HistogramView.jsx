@@ -38,12 +38,12 @@ const HistogramView = () => {
           const regionId = d.RegionID;
           const regionName = d.Regionsname;
           const year = +d.Jahr;
-          
+
           // Convert comma decimal to period decimal for all percentiles
           const score5Str = d[SCORE_5_COL]?.replace(',', '.');
           const score50Str = d[SCORE_50_COL]?.replace(',', '.');
           const score95Str = d[SCORE_95_COL]?.replace(',', '.');
-          
+
           const score5 = +score5Str;
           const score50 = +score50Str;
           const score95 = +score95Str;
@@ -77,7 +77,7 @@ const HistogramView = () => {
   // Filter and prepare data for histogram
   const histogramData = useMemo(() => {
     const yearData = data.filter(d => d.year === selectedYear);
-    
+
     // Select the appropriate score based on percentile
     let scores = [];
     if (selectedPercentile === 5) {
@@ -93,7 +93,7 @@ const HistogramView = () => {
         .filter(d => !d.isMissingData50)
         .map(d => d.score50);
     }
-    
+
     return scores;
   }, [data, selectedYear, selectedPercentile]);
 
@@ -147,15 +147,15 @@ const HistogramView = () => {
       .attr('stroke', '#1e40af')
       .attr('stroke-width', 1)
       .style('cursor', 'pointer')
-      .on('mouseover', function(event, d) {
+      .on('mouseover', function (event, d) {
         d3.select(this)
           .attr('fill', '#2563eb');
-        
+
         // Show tooltip
         const tooltip = svg.append('g')
           .attr('class', 'tooltip')
           .attr('transform', `translate(${x((d.x0 + d.x1) / 2)}, ${y(d.length) - 10})`);
-        
+
         tooltip.append('rect')
           .attr('x', -50)
           .attr('y', -35)
@@ -164,14 +164,14 @@ const HistogramView = () => {
           .attr('fill', 'white')
           .attr('stroke', '#333')
           .attr('rx', 5);
-        
+
         tooltip.append('text')
           .attr('text-anchor', 'middle')
           .attr('y', -20)
           .style('font-size', '12px')
           .style('font-weight', 'bold')
           .text(`Count: ${d.length}`);
-        
+
         tooltip.append('text')
           .attr('text-anchor', 'middle')
           .attr('y', -8)
@@ -179,7 +179,7 @@ const HistogramView = () => {
           .style('fill', '#666')
           .text(`[${d.x0.toFixed(2)}, ${d.x1.toFixed(2)})`);
       })
-      .on('mouseout', function() {
+      .on('mouseout', function () {
         d3.select(this)
           .attr('fill', '#3b82f6');
         svg.select('.tooltip').remove();
@@ -248,7 +248,7 @@ const HistogramView = () => {
         {/* Controls Panel */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Controls</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Year Slider */}
             <div className="space-y-2">
@@ -336,7 +336,7 @@ const HistogramView = () => {
                     const evenValue = Math.round(value / 2) * 2;
                     setBins(evenValue);
                   }}
-                  step="2"
+                  step="10"
                   className="flex-1 h-2"
                 />
                 <span className="text-xs text-gray-500">30</span>
@@ -379,7 +379,7 @@ const HistogramView = () => {
           <ul className="list-disc list-inside text-gray-600 space-y-1">
             <li><strong>X-axis:</strong> Score values (negative = renting favorable, positive = buying favorable)</li>
             <li><strong>Y-axis:</strong> Number of Kreise (regions) with scores in each bin</li>
-            <li><strong>Bins:</strong> Adjustable number of intervals to group the data (10-30, even numbers only)</li>
+            <li><strong>Bins:</strong> Adjustable number of intervals to group the data (10-30, power of 10)</li>
             <li><strong>Hover:</strong> Mouse over bars to see exact count and score range</li>
           </ul>
         </div>
