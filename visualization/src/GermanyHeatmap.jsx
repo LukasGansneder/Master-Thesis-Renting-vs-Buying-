@@ -128,7 +128,7 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
       const coords = polygonCoords.length === 1 ? polygonCoords[0] : polygonCoords;
 
       const polygon = L.polygon(coords, {
-        fillColor: !scoreData.score ? "#444" : color,
+        fillColor: scoreData.isNaN ? "#444" : color,
         fillOpacity: 0.7,
         color: '#333',
         weight: 1,
@@ -141,14 +141,14 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
           <div style="font-size: 12px; color: #666;">ID: ${scoreData.regionId}</div>
           <div style="font-size: 14px;">Year: ${scoreData.year}</div>
           <div style="font-size: 14px;">
-            Score: <span style="color: ${scoreData.score > 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">
-              ${scoreData.score.toFixed(3)}
+            Score: <span style="color: ${scoreData.isNaN ? '#444' : scoreData.score > 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">
+              ${scoreData.isNaN ? "N/A" : scoreData.score.toFixed(3)}
             </span>
           </div>
           <div style="font-size: 12px; color: #666; margin-top: 4px;">
             ${scoreData.score > 0.5 ? '✓ Buying favorable' :
           scoreData.score < -0.5 ? '✓ Renting favorable' :
-            scoreData.score === 0 ? 'N/A' :
+            scoreData.isNaN ? '' :
               '≈ Neutral'}
           </div>
         </div>
@@ -175,7 +175,7 @@ const GermanyHeatmap = () => {
   const [years, setYears] = useState([]);
   const [svgData, setSvgData] = useState(null);
   const [showBasemap, setShowBasemap] = useState(false);
-  const [colorScheme, setColorScheme] = useState('blue-white-red');
+  const [colorScheme, setColorScheme] = useState('navy-silver-amber');
   const fitBoundsRef = useRef(null);
 
   // Define color schemes
@@ -336,7 +336,7 @@ const GermanyHeatmap = () => {
           const scoreStr = d.Score.replace(',', '.');
           const score = +scoreStr;
 
-          if (isNaN(year) || isNaN(score)) return;
+          if (isNaN(year)) return;
 
           // Map regionId to data-kgs format (e.g., 1001 -> "01001")
           const kgs = regionId.toString().padStart(5, '0');
@@ -346,7 +346,8 @@ const GermanyHeatmap = () => {
             kgs,
             region: regionName,
             year,
-            score
+            score,
+            isNaN: !d.Score?.trim() || isNaN(score) || d.Score === 'N/A'
           });
         });
 
