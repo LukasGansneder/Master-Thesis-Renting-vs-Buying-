@@ -25,7 +25,7 @@ const MapController = ({ bounds, onFitBoundsRef }) => {
 };
 
 // Custom component to render SVG regions as Leaflet layers
-const SVGRegions = ({ svgData, yearData, colorScale }) => {
+const SVGRegions = ({ svgData, yearData, colorScale, selectedPercentile }) => {
   const map = useMap();
   const layerGroupRef = useRef(null);
 
@@ -120,7 +120,20 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
 
       if (polygonCoords.length === 0) return; // Skip if no valid polygons
 
-      const color = colorScale(scoreData.score);
+      // Select the appropriate score and missing data flag based on percentile
+      let score, isMissingData;
+      if (selectedPercentile === 5) {
+        score = scoreData.score5;
+        isMissingData = scoreData.isMissingData5;
+      } else if (selectedPercentile === 95) {
+        score = scoreData.score95;
+        isMissingData = scoreData.isMissingData95;
+      } else {
+        score = scoreData.score50;
+        isMissingData = scoreData.isMissingData50;
+      }
+
+      const color = colorScale(score);
 
       // L.polygon can handle both single polygons and multi-polygons
       // Single polygon: [[lat,lng], [lat,lng], ...]
@@ -128,7 +141,7 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
       const coords = polygonCoords.length === 1 ? polygonCoords[0] : polygonCoords;
 
       const polygon = L.polygon(coords, {
-        fillColor: scoreData.isNaN ? "#444" : color,
+        fillColor: isMissingData ? "#444" : color,
         fillOpacity: 0.7,
         color: '#333',
         weight: 1,
@@ -141,14 +154,14 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
           <div style="font-size: 12px; color: #666;">ID: ${scoreData.regionId}</div>
           <div style="font-size: 14px;">Year: ${scoreData.year}</div>
           <div style="font-size: 14px;">
-            Score: <span style="color: ${scoreData.isNaN ? '#444' : scoreData.score > 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">
-              ${scoreData.isNaN ? "N/A" : scoreData.score.toFixed(3)}
+            Score (${selectedPercentile}% Percentile): <span style="color: ${isMissingData ? '#444' : score > 0 ? '#16a34a' : '#dc2626'}; font-weight: bold;">
+              ${isMissingData ? "N/A" : score.toFixed(3)}
             </span>
           </div>
           <div style="font-size: 12px; color: #666; margin-top: 4px;">
-            ${scoreData.score > 0.5 ? '✓ Buying favorable' :
-          scoreData.score < -0.5 ? '✓ Renting favorable' :
-            scoreData.isNaN ? '' :
+            ${score > 0.5 ? '✓ Buying favorable' :
+          score < -0.5 ? '✓ Renting favorable' :
+            isMissingData ? '' :
               '≈ Neutral'}
           </div>
         </div>
@@ -163,7 +176,7 @@ const SVGRegions = ({ svgData, yearData, colorScale }) => {
         map.removeLayer(layerGroupRef.current);
       }
     };
-  }, [map, svgData, yearData, colorScale]);
+  }, [map, svgData, yearData, colorScale, selectedPercentile]);
 
   return null;
 };
@@ -176,7 +189,13 @@ const GermanyHeatmap = () => {
   const [svgData, setSvgData] = useState(null);
   const [showBasemap, setShowBasemap] = useState(false);
   const [colorScheme, setColorScheme] = useState('navy-silver-amber');
+  const [selectedPercentile, setSelectedPercentile] = useState(50);
   const fitBoundsRef = useRef(null);
+
+  // Column names from CSV
+  const SCORE_5_COL = 'Score (5% Perzentil)';
+  const SCORE_50_COL = 'Score (50% Perzentil)';
+  const SCORE_95_COL = 'Score (95% Perzentil)';
 
   // Define color schemes
   const colorSchemes = {
@@ -293,7 +312,7 @@ const GermanyHeatmap = () => {
 
         // Load CSV files and SVG
         const [scoresText, svgText] = await Promise.all([
-          fetch('./data/export_empirica_regio.csv').then(r => r.text()),
+          fetch('./data/export_3_level_Score.csv').then(r => r.text()),
           fetch('./data/landkreise.svg').then(r => r.text())
         ]);
 
@@ -332,9 +351,15 @@ const GermanyHeatmap = () => {
           const regionId = d.RegionID;
           const regionName = d.Regionsname;
           const year = +d.Jahr;
-          // Convert comma decimal to period decimal
-          const scoreStr = d.Score.replace(',', '.');
-          const score = +scoreStr;
+          
+          // Convert comma decimal to period decimal for all percentiles
+          const score5Str = d[SCORE_5_COL]?.replace(',', '.');
+          const score50Str = d[SCORE_50_COL]?.replace(',', '.');
+          const score95Str = d[SCORE_95_COL]?.replace(',', '.');
+          
+          const score5 = +score5Str;
+          const score50 = +score50Str;
+          const score95 = +score95Str;
 
           if (isNaN(year)) return;
 
@@ -346,8 +371,12 @@ const GermanyHeatmap = () => {
             kgs,
             region: regionName,
             year,
-            score,
-            isNaN: !d.Score?.trim() || isNaN(score) || d.Score === 'N/A'
+            score5,
+            score50,
+            score95,
+            isMissingData5: !d[SCORE_5_COL]?.trim() || isNaN(score5),
+            isMissingData50: !d[SCORE_50_COL]?.trim() || isNaN(score50),
+            isMissingData95: !d[SCORE_95_COL]?.trim() || isNaN(score95)
           });
         });
 
@@ -460,6 +489,7 @@ const GermanyHeatmap = () => {
                 svgData={svgData}
                 yearData={yearData}
                 colorScale={colorScale}
+                selectedPercentile={selectedPercentile}
               />
               <MapController bounds={mapBounds} onFitBoundsRef={fitBoundsRef} />
             </>
@@ -486,6 +516,55 @@ const GermanyHeatmap = () => {
                 className="flex-1 h-2"
               />
               <span className="text-xs text-gray-500">{Math.max(...years)}</span>
+            </div>
+          </div>
+
+          {/* Percentile Selector */}
+          <div className="space-y-2">
+            <span className="text-sm font-medium text-gray-700 block">Percentile</span>
+            <div className="flex gap-2">
+              <label className={`flex-1 cursor-pointer ${selectedPercentile === 5 ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'} border-2 rounded-lg px-3 py-2 transition-all hover:border-blue-400`}>
+                <input
+                  type="radio"
+                  name="percentile"
+                  value="5"
+                  checked={selectedPercentile === 5}
+                  onChange={(e) => setSelectedPercentile(+e.target.value)}
+                  className="sr-only"
+                />
+                <div className="flex flex-col items-center">
+                  <span className={`text-sm font-semibold ${selectedPercentile === 5 ? 'text-blue-700' : 'text-gray-700'}`}>5%</span>
+                  <span className={`text-xs ${selectedPercentile === 5 ? 'text-blue-600' : 'text-gray-500'}`}>Low</span>
+                </div>
+              </label>
+              <label className={`flex-1 cursor-pointer ${selectedPercentile === 50 ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'} border-2 rounded-lg px-3 py-2 transition-all hover:border-blue-400`}>
+                <input
+                  type="radio"
+                  name="percentile"
+                  value="50"
+                  checked={selectedPercentile === 50}
+                  onChange={(e) => setSelectedPercentile(+e.target.value)}
+                  className="sr-only"
+                />
+                <div className="flex flex-col items-center">
+                  <span className={`text-sm font-semibold ${selectedPercentile === 50 ? 'text-blue-700' : 'text-gray-700'}`}>50%</span>
+                  <span className={`text-xs ${selectedPercentile === 50 ? 'text-blue-600' : 'text-gray-500'}`}>Median</span>
+                </div>
+              </label>
+              <label className={`flex-1 cursor-pointer ${selectedPercentile === 95 ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-300'} border-2 rounded-lg px-3 py-2 transition-all hover:border-blue-400`}>
+                <input
+                  type="radio"
+                  name="percentile"
+                  value="95"
+                  checked={selectedPercentile === 95}
+                  onChange={(e) => setSelectedPercentile(+e.target.value)}
+                  className="sr-only"
+                />
+                <div className="flex flex-col items-center">
+                  <span className={`text-sm font-semibold ${selectedPercentile === 95 ? 'text-blue-700' : 'text-gray-700'}`}>95%</span>
+                  <span className={`text-xs ${selectedPercentile === 95 ? 'text-blue-600' : 'text-gray-500'}`}>High</span>
+                </div>
+              </label>
             </div>
           </div>
 
