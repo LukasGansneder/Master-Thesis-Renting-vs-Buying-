@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 const Footer = () => {
   const buildInfo = useMemo(() => {
     const isDev = import.meta.env.DEV;
-    
+
     if (isDev) {
       return {
         commit: 'development',
@@ -11,9 +11,9 @@ const Footer = () => {
         isDev: true
       };
     } else {
-      const commit = import.meta.env.VITE_COMMIT_SHA || 'unknown';
+      const commit = import.meta.env.VITE_COMMIT_MESSAGE || 'production build';
       const buildTime = import.meta.env.VITE_BUILD_TIME || new Date().toISOString();
-      
+
       return {
         commit,
         time: buildTime,

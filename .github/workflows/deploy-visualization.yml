@@ -41,6 +41,8 @@ jobs:
         env:
           NODE_ENV: production
           BASE_PATH: "/${{ github.event.repository.name }}/"
+          VITE_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
+          VITE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
