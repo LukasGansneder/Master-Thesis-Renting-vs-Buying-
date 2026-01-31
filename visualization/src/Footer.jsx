@@ -48,7 +48,7 @@ const Footer = () => {
               </div>
             ) : (
               <>
-                <span>Build: {buildInfo.commit.substring(0, 7)}</span>
+                <span>Build: {buildInfo.commit}</span>
                 <span>•</span>
                 <span>Built: {formatDate(buildInfo.time)}</span>
               </>
