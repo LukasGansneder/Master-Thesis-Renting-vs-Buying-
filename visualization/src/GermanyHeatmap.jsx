@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Popup, SVGOverlay, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import L from 'leaflet';
@@ -52,7 +52,7 @@ const GeoJsonRegions = ({ geoJsonData, yearData, colorScale, selectedPercentile 
     const geoJsonToLeaflet = (coordinates, type) => {
       if (type === 'Polygon') {
         // Polygon: array of rings, each ring is an array of [lng, lat]
-        return coordinates.map(ring => 
+        return coordinates.map(ring =>
           ring.map(coord => [coord[1], coord[0]])
         );
       } else if (type === 'MultiPolygon') {
@@ -288,12 +288,12 @@ const GermanyHeatmap = () => {
           const regionId = d.RegionID;
           const regionName = d.Regionsname;
           const year = +d.Jahr;
-          
+
           // Convert comma decimal to period decimal for all percentiles
           const score5Str = d[SCORE_5_COL]?.replace(',', '.');
           const score50Str = d[SCORE_50_COL]?.replace(',', '.');
           const score95Str = d[SCORE_95_COL]?.replace(',', '.');
-          
+
           const score5 = +score5Str;
           const score50 = +score50Str;
           const score95 = +score95Str;
