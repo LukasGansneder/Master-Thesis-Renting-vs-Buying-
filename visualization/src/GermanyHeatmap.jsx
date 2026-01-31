@@ -444,7 +444,6 @@ const GermanyHeatmap = () => {
           fadeAnimation={true}
           markerZoomAnimation={true}
           zoomAnimationThreshold={4}
-          maxZoom={8}
           minZoom={5.5}
           maxBounds={mapBounds}
         >
