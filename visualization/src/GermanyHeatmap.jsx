@@ -340,23 +340,27 @@ const GermanyHeatmap = () => {
       const geometry = feature.geometry;
       if (!geometry || !geometry.coordinates) return;
 
-      const processCoordinates = (coords, depth) => {
-        if (depth === 0) {
-          // coords is [lng, lat]
-          const [lng, lat] = coords;
-          minLat = Math.min(minLat, lat);
-          maxLat = Math.max(maxLat, lat);
-          minLng = Math.min(minLng, lng);
-          maxLng = Math.max(maxLng, lng);
-        } else {
-          // coords is an array, recurse
-          coords.forEach(c => processCoordinates(c, depth - 1));
-        }
+      const processCoordinate = (coord) => {
+        const [lng, lat] = coord;
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+        minLng = Math.min(minLng, lng);
+        maxLng = Math.max(maxLng, lng);
       };
 
-      // Polygon has depth 2, MultiPolygon has depth 3
-      const depth = geometry.type === 'Polygon' ? 2 : 3;
-      processCoordinates(geometry.coordinates, depth);
+      if (geometry.type === 'Polygon') {
+        // Polygon: array of rings, each ring is an array of [lng, lat]
+        geometry.coordinates.forEach(ring => {
+          ring.forEach(coord => processCoordinate(coord));
+        });
+      } else if (geometry.type === 'MultiPolygon') {
+        // MultiPolygon: array of polygons
+        geometry.coordinates.forEach(polygon => {
+          polygon.forEach(ring => {
+            ring.forEach(coord => processCoordinate(coord));
+          });
+        });
+      }
     });
 
     if (isFinite(minLat) && isFinite(maxLat) && isFinite(minLng) && isFinite(maxLng)) {
